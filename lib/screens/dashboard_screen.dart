@@ -6,93 +6,89 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('City Dashboard', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.deepPurple,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
+      appBar: AppBar(title: const Text('CITY FLOW ANALYTICS')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Hawassa Transport Stats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('REAL-TIME MONITORING', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 16),
             Row(
               children: [
-                _statBox('24', 'Buses', Colors.blue),
+                _miniStat('FLOW', '94%', Icons.speed_rounded, Colors.green),
                 const SizedBox(width: 12),
-                _statBox('156', 'Taxis', Colors.green),
-                const SizedBox(width: 12),
-                _statBox('89', 'Deliveries', Colors.orange),
+                _miniStat('ACTIVE', '1.2k', Icons.drive_eta_rounded, Colors.blue),
               ],
             ),
             const SizedBox(height: 32),
-            const Text('Weekly Trip Volume', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('TRANSPORT DEMAND FORECAST', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 16),
             Container(
               height: 200,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _bar(40, 'Mon'),
-                  _bar(70, 'Tue'),
-                  _bar(90, 'Wed'),
-                  _bar(60, 'Thu'),
-                  _bar(80, 'Fri'),
-                  _bar(100, 'Sat'),
-                  _bar(50, 'Sun'),
+                  _bar(30), _bar(50), _bar(80), _bar(100), _bar(70), _bar(40),
                 ],
               ),
             ),
             const SizedBox(height: 32),
-            const Text('City Alerts', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            _alertCard('Road Construction', 'Piassa area road closed for 2 days.', Colors.orange),
-            _alertCard('New Bus Route', 'Route 4 now connecting Stadium to Lake.', Colors.green),
-            _alertCard('Heavy Rain Warning', 'Expect delays due to flooding near Market.', Colors.red),
+            const Text('RECENT CITY ALERTS', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            const SizedBox(height: 16),
+            _alertItem('Road Closure', 'Piazza intersection closed for maintenance.', 'High'),
+            _alertItem('Traffic Surge', 'Unusual traffic detected near Stadium.', 'Medium'),
           ],
         ),
       ),
     );
   }
 
-  Widget _statBox(String value, String label, Color color) {
+  Widget _miniStat(String label, String val, IconData icon, Color color) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.3))),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Column(
           children: [
-            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Icon(icon, color: color),
+            const SizedBox(height: 8),
+            Text(val, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
           ],
         ),
       ),
     );
   }
 
-  Widget _bar(double height, String label) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Container(width: 20, height: height, decoration: BoxDecoration(color: Colors.deepPurple.shade300, borderRadius: BorderRadius.circular(4))),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 10)),
-      ],
+  Widget _bar(double h) {
+    return Container(
+      width: 20,
+      height: h,
+      decoration: BoxDecoration(
+        color: const Color(0xFF4CAF50),
+        borderRadius: BorderRadius.circular(4),
+      ),
     );
   }
 
-  Widget _alertCard(String title, String desc, Color color) {
+  Widget _alertItem(String title, String desc, String priority) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(Icons.warning, color: color, size: 20)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        leading: Icon(Icons.warning_rounded, color: priority == 'High' ? Colors.red : Colors.orange),
+        title: Text(title),
         subtitle: Text(desc),
+        trailing: Text(priority, style: TextStyle(color: priority == 'High' ? Colors.red : Colors.orange, fontWeight: FontWeight.bold)),
       ),
     );
   }

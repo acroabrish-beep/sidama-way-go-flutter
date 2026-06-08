@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'book_ride_screen.dart';
-import 'bus_track_screen.dart';
-import 'food_screen.dart';
+import '../maps/realtime_map_screen.dart';
+import '../tourism/tourism_screen.dart';
+import '../healthcare/healthcare_screen.dart';
+import '../pharmacy/pharmacy_screen.dart';
+import '../contract_ride/contract_ride_screen.dart';
 import 'profile_screen.dart';
-import 'tourist_screen.dart';
-import 'wallet_screen.dart';
-import 'driver_panel_screen.dart';
-import 'eco_shine_screen.dart';
-import 'delivery_screen.dart';
+import 'bus_track_screen.dart';
+import 'ai_assistant_screen.dart';
+import 'admin_dashboard_screen.dart';
+import 'government_fleet_screen.dart';
+import 'public_transport_screen.dart';
+import 'delivery_services_screen.dart';
+import 'eco_shine_station_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,9 +25,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     const _HomePage(),
-    const BusTrackScreen(),
-    const FoodScreen(),
-    const TouristScreen(),
+    const PublicTransportScreen(),
+    const RealtimeMapScreen(),
+    const AiAssistantScreen(),
     const ProfileScreen(),
   ];
 
@@ -39,9 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Bus'),
-          BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: 'Food'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Tourist'),
+          BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Transit'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Explore'),
+          BottomNavigationBarItem(icon: Icon(Icons.assistant), label: 'AI Chat'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
@@ -50,193 +54,158 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _HomePage extends StatelessWidget {
-  const _HomePage({super.key});
+  const _HomePage();
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final services = [
-      {'icon': Icons.local_taxi, 'label': 'Book Ride', 'color': 0xFF2E7D32, 'screen': const BookRideScreen()},
-      {'icon': Icons.directions_bus, 'label': 'Bus Track', 'color': 0xFF1565C0, 'screen': const BusTrackScreen()},
-      {'icon': Icons.restaurant, 'label': 'Food', 'color': 0xFFAD1457, 'screen': const FoodScreen()},
-      {'icon': Icons.map, 'label': 'Tourist Guide', 'color': 0xFF009688, 'screen': const TouristScreen()},
-      {'icon': Icons.drive_eta, 'label': 'Driver Panel', 'color': 0xFF673AB7, 'screen': const DriverPanelScreen()},
-      {'icon': Icons.local_car_wash, 'label': 'Eco-Shine', 'color': 0xFF00695C, 'screen': const EcoShineScreen()},
-      {'icon': Icons.delivery_dining, 'label': 'Delivery', 'color': 0xFFE65100, 'screen': const DeliveryScreen()},
-      {'icon': Icons.account_balance_wallet, 'label': 'Wallet', 'color': 0xFF4527A0, 'screen': const WalletScreen()},
+      {'icon': Icons.local_taxi, 'label': 'Book Ride', 'color': 0xFF2E7D32, 'page': const RealtimeMapScreen()},
+      {'icon': Icons.directions_bus, 'label': 'Public Transit', 'color': 0xFF1B5E20, 'page': const PublicTransportScreen()},
+      {'icon': Icons.delivery_dining, 'label': 'Delivery', 'color': 0xFFE65100, 'page': const DeliveryServicesScreen()},
+      {'icon': Icons.local_car_wash, 'label': 'Eco-Shine', 'color': 0xFF00695C, 'page': const EcoShineStationScreen()},
+      {'icon': Icons.map, 'label': 'Tourism', 'color': 0xFF1565C0, 'page': const TourismScreen()},
+      {'icon': Icons.local_hospital, 'label': 'Healthcare', 'color': 0xFFAD1457, 'page': const HealthcareScreen()},
+      {'icon': Icons.dashboard, 'label': 'Admin Dash', 'color': 0xFF4527A0, 'page': const AdminDashboardScreen()},
+      {'icon': Icons.airport_shuttle, 'label': 'Gov Fleet', 'color': 0xFF37474F, 'page': const GovernmentFleetScreen()},
+      {'icon': Icons.assistant, 'label': 'AI Assistant', 'color': 0xFF009688, 'page': const AiAssistantScreen()},
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: const Color(0xFF1B5E20),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1B5E20), Color(0xFF43A047)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                padding: const EdgeInsets.fromLTRB(20, 40, 20, 10),
-                child: SingleChildScrollView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 30),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('📍 Hawassa, Sidama', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Hello, ${user?.email?.split('@')[0] ?? 'User'}! 👋',
-                                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              _headerBadge('🗺️ Tourist', Colors.white.withOpacity(0.2)),
-                              const SizedBox(width: 8),
-                              _headerBadge('🚨 SOS', Colors.red),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text('Search destination (Piassa, University...)',
-                                style: TextStyle(color: Colors.grey),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('Smart Hawassa', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF2E7D32),
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Color(0xFF2E7D32),
+                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
               ),
-            ),
-            title: const Text('Sidama Way Go', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Services', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
+                  Text('Hello, ${user?.email?.split('@')[0] ?? 'User'}! 👋',
+                      style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text('Navigating the Heart of the Sidama Region.', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.white,
+                      borderRadius: BorderRadius.circular(15)
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.search, color: Colors.grey),
+                        SizedBox(width: 10),
+                        Text('Search destinations...', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Smart City Hub', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 15),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 8,
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.8,
+                      childAspectRatio: 0.9,
                     ),
                     itemCount: services.length,
                     itemBuilder: (context, index) {
                       final s = services[index];
                       return GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => s['screen'] as Widget)),
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Color(s['color'] as int).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => s['page'] as Widget)),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4)
+                              )
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Color(s['color'] as int).withOpacity(0.1),
+                                  shape: BoxShape.circle
+                                ),
+                                child: Icon(s['icon'] as IconData, size: 28, color: Color(s['color'] as int)),
                               ),
-                              child: Icon(s['icon'] as IconData, color: Color(s['color'] as int), size: 24),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(s['label'] as String, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                s['label'] as String,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
                   ),
                   const SizedBox(height: 24),
-                  const Text('Choose Ride', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _rideQuickCard(context, 'Motor', Icons.motorcycle, Colors.orange),
-                      _rideQuickCard(context, 'Bajaj', Icons.electric_rickshaw, Colors.blue),
-                      _rideQuickCard(context, 'Car', Icons.directions_car, Colors.green),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const Text('Recent Trips', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  _tripCard('Piassa → Stadium', 'Bajaj • 40 ETB', '10 min ago', Icons.electric_rickshaw, 0xFFE65100),
-                  _tripCard('Adebabay → University', 'Taxi • 120 ETB', 'Yesterday', Icons.local_taxi, 0xFF2E7D32),
+                  _buildEcoStatus(context),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _headerBadge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-      child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _rideQuickCard(BuildContext context, String name, IconData icon, Color color) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BookRideScreen())),
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                Icon(icon, color: color),
-                const SizedBox(height: 4),
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _tripCard(String route, String detail, String time, IconData icon, int color) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(backgroundColor: Color(color).withOpacity(0.1), child: Icon(icon, color: Color(color))),
-        title: Text(route, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(detail),
-        trailing: Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+  Widget _buildEcoStatus(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF00695C).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF00695C).withOpacity(0.3))
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.wb_sunny, color: Colors.amber),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Eco-Shine Station Live', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('Piazza Station: 85% Solar Power', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EcoShineStationScreen())),
+            child: const Text('View Status'),
+          )
+        ],
       ),
     );
   }

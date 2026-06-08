@@ -4,92 +4,138 @@ import 'book_ride_screen.dart';
 class TouristScreen extends StatelessWidget {
   const TouristScreen({super.key});
 
-  final List<Map<String, String>> _spots = const [
-    {
-      'name': 'Hawassa Lake & Amora Gedel',
-      'emoji': '🐦',
-      'desc': 'Beautiful birds, monkeys, fresh fish market',
-      'info': 'Amora Gedel is a popular lakeside park where you can enjoy the breeze, watch diverse bird species, and see friendly monkeys. It is famous for its fish market.'
-    },
-    {
-      'name': 'Gudumale Cultural Center',
-      'emoji': '🎭',
-      'desc': 'Fichee-Chambalaala UNESCO heritage site',
-      'info': 'Gudumale is the sacred site where the Sidama people celebrate Fichee-Chambalaala, the New Year festival, which is inscribed on the UNESCO list of Intangible Cultural Heritage.'
-    },
-    {
-      'name': 'Tabor Mountain',
-      'emoji': '⛰️',
-      'desc': 'Scenic hiking trails and city views',
-      'info': 'Tabor Mountain offers a panoramic view of Hawassa city and the lake. It is a great spot for hiking, morning exercise, and watching the sunset.'
-    },
-    {
-      'name': 'Millennium Park',
-      'emoji': '🌳',
-      'desc': 'Beautiful gardens and recreational area',
-      'info': 'A relatively new and well-maintained park in the heart of the city, offering lush greenery, flowers, and a peaceful environment for relaxation.'
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final spots = [
+      {
+        'name': 'Hawassa Lake & Amora Gedel',
+        'image': '🌊',
+        'desc': 'Stunning lake views and wildlife.',
+        'tag': 'Nature'
+      },
+      {
+        'name': 'Fish Market',
+        'image': '🐟',
+        'desc': 'Famous fresh tilapia market by the lake.',
+        'tag': 'Culture'
+      },
+      {
+        'name': 'Tabor Mountain',
+        'image': '⛰️',
+        'desc': 'Hiking trails with panoramic city views.',
+        'tag': 'Adventure'
+      },
+      {
+        'name': 'Cultural Center',
+        'image': '🎭',
+        'desc': 'Explore Sidama heritage and architecture.',
+        'tag': 'History'
+      },
+    ];
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hawassa Tourist Guide', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF2E7D32),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _spots.length,
-        itemBuilder: (context, i) {
-          final s = _spots[i];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Column(
+      appBar: AppBar(title: const Text('TOURISM GUIDE')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildAITripPlanner(),
+            const SizedBox(height: 32),
+            const Text('POPULAR ATTRACTIONS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 16),
+            ...spots.map((s) => _buildSpotCard(context, s)),
+            const SizedBox(height: 32),
+            const Text('TOURIST SERVICES', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 16),
+            Row(
               children: [
-                ListTile(
-                  leading: Text(s['emoji']!, style: const TextStyle(fontSize: 32)),
-                  title: Text(s['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(s['desc']!),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (_) => AlertDialog(
-                                title: Text(s['name']!),
-                                content: Text(s['info']!),
-                                actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
-                              ),
-                            );
-                          },
-                          child: const Text('Learn More'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const BookRideScreen()));
-                          },
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white),
-                          child: const Text('Book Ride'),
-                        ),
-                      ),
-                    ],
+                _buildServiceIcon(Icons.hotel_rounded, 'Hotels'),
+                _buildServiceIcon(Icons.restaurant_rounded, 'Food'),
+                _buildServiceIcon(Icons.map_rounded, 'Routes'),
+                _buildServiceIcon(Icons.support_agent_rounded, 'Support'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAITripPlanner() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(colors: [Color(0xFF2979FF), Color(0xFF00C853)]),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.auto_awesome, color: Colors.white),
+              SizedBox(width: 8),
+              Text('AI TRIP PLANNER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text('Plan your perfect stay in Hawassa using our smart AI agent.', style: TextStyle(color: Colors.white70)),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () {},
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.blue),
+            child: const Text('START PLANNING'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpotCard(BuildContext context, Map<String, String> s) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Text(s['image']!, style: const TextStyle(fontSize: 32)),
+            title: Text(s['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(s['desc']!),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              child: Text(s['tag']!, style: const TextStyle(fontSize: 10, color: Colors.blue, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Row(
+              children: [
+                Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Learn More'))),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BookRideScreen())),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00C853), foregroundColor: Colors.white),
+                    child: const Text('Book Ride'),
                   ),
                 ),
               ],
             ),
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceIcon(IconData icon, String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          CircleAvatar(backgroundColor: Colors.white.withOpacity(0.05), child: Icon(icon, color: Colors.grey)),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        ],
       ),
     );
   }

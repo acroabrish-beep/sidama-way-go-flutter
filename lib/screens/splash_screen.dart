@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -14,51 +12,53 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    _navToHome();
   }
 
-  Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2));
+  void _navToHome() async {
+    await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2E7D32),
+      backgroundColor: const Color(0xFF0A0E0A),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.directions_bus, size: 80, color: Colors.white),
-            const SizedBox(height: 16),
+            const Icon(Icons.auto_awesome, size: 80, color: Color(0xFF4CAF50)),
+            const SizedBox(height: 24),
             const Text(
-              'Sidama Way Go',
+              'SMART MOBILITY',
               style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 4,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 8),
             const Text(
-              'ZEMENAW TRANSPORT',
-              style: TextStyle(fontSize: 14, color: Colors.white70),
+              'ETHIOPIA AI',
+              style: TextStyle(
+                fontSize: 14,
+                letterSpacing: 2,
+                color: Colors.grey,
+              ),
             ),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(color: Colors.white),
+            const SizedBox(height: 48),
+            const SizedBox(
+              width: 150,
+              child: LinearProgressIndicator(
+                color: Color(0xFF4CAF50),
+                backgroundColor: Colors.white12,
+              ),
+            ),
           ],
         ),
       ),
