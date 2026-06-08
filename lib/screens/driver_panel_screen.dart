@@ -8,9 +8,9 @@ class DriverPanelScreen extends StatefulWidget {
 }
 
 class _DriverPanelScreenState extends State<DriverPanelScreen> {
-  bool _isOnline = true;
+  bool _isOnline = false;
 
-  final List<Map<String, dynamic>> _requests = [
+  final List<Map<String, String>> _requests = [
     {'name': 'Abebe B.', 'pickup': 'Piassa', 'dest': 'Stadium', 'fare': '40 ETB'},
     {'name': 'Mulugeta T.', 'pickup': 'Menahariya', 'dest': 'University', 'fare': '120 ETB'},
     {'name': 'Sara K.', 'pickup': 'Hawassa Lake', 'dest': 'Piazza', 'fare': '80 ETB'},
@@ -36,9 +36,9 @@ class _DriverPanelScreenState extends State<DriverPanelScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_isOnline ? 'You are Online' : 'You are Offline',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _isOnline ? Colors.green : Colors.red)),
-                    const Text('Available for requests', style: TextStyle(color: Colors.grey)),
+                    Text(_isOnline ? 'Online' : 'Offline',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _isOnline ? Colors.green : Colors.red)),
+                    Text(_isOnline ? 'Accepting rides' : 'Not accepting rides', style: const TextStyle(color: Colors.grey)),
                   ],
                 ),
                 Switch(
@@ -63,12 +63,12 @@ class _DriverPanelScreenState extends State<DriverPanelScreen> {
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Align(alignment: Alignment.centerLeft, child: Text('Incoming Requests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+            child: Align(alignment: Alignment.centerLeft, child: Text('Ride Requests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _requests.length,
+              itemCount: _isOnline ? _requests.length : 0,
               itemBuilder: (context, i) {
                 final r = _requests[i];
                 return Card(
@@ -85,12 +85,12 @@ class _DriverPanelScreenState extends State<DriverPanelScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(r['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  Text(r['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
                                   Text('${r['pickup']} → ${r['dest']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
                             ),
-                            Text(r['fare'], style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                            Text(r['fare']!, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
                           ],
                         ),
                         const SizedBox(height: 16),
@@ -102,7 +102,9 @@ class _DriverPanelScreenState extends State<DriverPanelScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride accepted! Navigating to pickup')));
+                                },
                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                                 child: const Text('Accept', style: TextStyle(color: Colors.white)),
                               ),
@@ -116,6 +118,10 @@ class _DriverPanelScreenState extends State<DriverPanelScreen> {
               },
             ),
           ),
+          if (!_isOnline)
+            const Expanded(
+              child: Center(child: Text('Go online to see requests', style: TextStyle(color: Colors.grey))),
+            ),
         ],
       ),
     );

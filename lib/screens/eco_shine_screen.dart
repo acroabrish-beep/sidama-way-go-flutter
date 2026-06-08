@@ -6,60 +6,88 @@ class EcoShineScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stations = [
-      {'name': 'Piazza Station', 'queue': 2},
-      {'name': 'University Hub', 'queue': 5},
-      {'name': 'Haile Resort Point', 'queue': 0},
+      {'name': 'Piazza Station', 'queue': 2, 'capacity': 0.4},
+      {'name': 'Hawassa University Station', 'queue': 0, 'capacity': 0.1},
+      {'name': 'Haile Resort Station', 'queue': 4, 'capacity': 0.7},
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eco-Shine Solar Wash'),
+        title: const Text('Eco-Shine Stations', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF00695C),
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
-          // Map Placeholder with Station Markers
           Container(
-            height: 250,
-            width: double.infinity,
-            color: Colors.teal.shade50,
-            child: Stack(
+            padding: const EdgeInsets.all(16),
+            color: const Color(0xFF00695C).withOpacity(0.1),
+            child: const Row(
               children: [
-                const Center(child: Icon(Icons.map, size: 100, color: Colors.teal)),
-                _marker(50, 100, 'Station A'),
-                _marker(150, 200, 'Station B'),
-                _marker(200, 50, 'Station C'),
+                Icon(Icons.info_outline, color: Color(0xFF00695C)),
+                SizedBox(width: 12),
+                Expanded(child: Text('Solar-powered stations with water recycling & free USB charging', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
               ],
             ),
           ),
           Expanded(
-            child: ListView(
+            child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _FeatureIcon(Icons.wb_sunny, 'Solar Powered'),
-                    _FeatureIcon(Icons.recycling, 'Water Recycling'),
-                    _FeatureIcon(Icons.usb, 'Free USB'),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Text('Nearby Stations', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                ...stations.map((s) => Card(
-                  child: ListTile(
-                    title: Text(s['name'] as String),
-                    subtitle: Text('Current Queue: ${s['queue']} people'),
-                    trailing: ElevatedButton(
-                      onPressed: () => _showBookingDialog(context, s['name'] as String),
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00695C), foregroundColor: Colors.white),
-                      child: const Text('Book Slot'),
+              itemCount: stations.length,
+              itemBuilder: (context, i) {
+                final s = stations[i];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(s['name'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(20)),
+                              child: Text('Queue: ${s['queue']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00695C))),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('Capacity', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 4),
+                        LinearProgressIndicator(
+                          value: s['capacity'] as double,
+                          backgroundColor: Colors.grey.shade200,
+                          color: (s['capacity'] as double) > 0.6 ? Colors.orange : Colors.teal,
+                        ),
+                        const SizedBox(height: 16),
+                        const Row(
+                          children: [
+                            _Badge(Icons.wb_sunny, 'Solar'),
+                            _Badge(Icons.recycling, 'Water Recycle'),
+                            _Badge(Icons.usb, 'USB'),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Prices from 50 ETB', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ElevatedButton(
+                              onPressed: () => _bookSlot(context),
+                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00695C), foregroundColor: Colors.white),
+                              child: const Text('Book Slot'),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                )),
-              ],
+                );
+              },
             ),
           ),
         ],
@@ -67,65 +95,40 @@ class EcoShineScreen extends StatelessWidget {
     );
   }
 
-  Widget _marker(double top, double left, String label) {
-    return Positioned(
-      top: top, left: left,
-      child: const Column(
-        children: [
-          Icon(Icons.location_on, color: Color(0xFF00695C), size: 30),
-        ],
-      ),
-    );
-  }
-
-  void _showBookingDialog(BuildContext context, String station) {
-    showDialog(
+  void _bookSlot(BuildContext context) async {
+    final date = await showDatePicker(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Book at $station'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Select Time Slot'),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              children: ['09:00', '10:30', '14:00', '16:30'].map((t) => ActionChip(label: Text(t), onPressed: () {})).toList(),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking Confirmed!'), backgroundColor: Colors.green));
-            },
-            child: const Text('Confirm'),
-          ),
-        ],
-      ),
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 7)),
     );
+    if (date != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Slot booked for ${date.day}/${date.month}/${date.year}!'), backgroundColor: const Color(0xFF00695C)),
+      );
+    }
   }
 }
 
-class _FeatureIcon extends StatelessWidget {
+class _Badge extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _FeatureIcon(this.icon, this.label);
+  const _Badge(this.icon, this.label);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.teal.shade100, shape: BoxShape.circle),
-          child: Icon(icon, color: const Color(0xFF00695C)),
-        ),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-      ],
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(4)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: Colors.grey),
+          const SizedBox(width: 4),
+          Text(label, style: const TextStyle(fontSize: 9, color: Colors.grey)),
+        ],
+      ),
     );
   }
 }
