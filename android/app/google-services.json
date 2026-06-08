@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "172007348276",
+    "firebase_url": "https://zemenaygozo-dfttla-default-rtdb.firebaseio.com",
+    "project_id": "zemenaygozo-dfttla",
+    "storage_bucket": "zemenaygozo-dfttla.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172007348276:android:45259f4ba5a92ab9291261",
+        "android_client_info": {
+          "package_name": "com.SynergyLabs.gatedcommunity"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAONArWJb-O8-IH2B191bg1mZ2QlGYmKRw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172007348276:android:9f6bdfa4a482bf0a291261",
+        "android_client_info": {
+          "package_name": "com.sidama.sidama_way_go"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAONArWJb-O8-IH2B191bg1mZ2QlGYmKRw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
