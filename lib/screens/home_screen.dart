@@ -8,6 +8,7 @@ import 'wallet_screen.dart';
 import 'profile_screen.dart';
 import 'driver_panel_screen.dart';
 import 'eco_shine_screen.dart';
+import 'tourist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     const _HomePage(),
     const BusTrackScreen(),
+    const TouristScreen(),
     const WalletScreen(),
     const ProfileScreen(),
   ];
@@ -38,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Bus'),
+          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), label: 'Tourist'),
           BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
@@ -55,12 +58,13 @@ class _HomePage extends StatelessWidget {
     final services = [
       {'icon': Icons.local_taxi, 'label': 'Book Ride', 'color': 0xFF2E7D32, 'screen': const BookRideScreen()},
       {'icon': Icons.directions_bus, 'label': 'Bus Track', 'color': 0xFF1565C0, 'screen': const BusTrackScreen()},
-      {'icon': Icons.delivery_dining, 'label': 'Delivery', 'color': 0xFFE65100, 'screen': const DeliveryScreen()},
+      {'icon': Icons.map_outlined, 'label': 'Tourist Guide', 'color': 0xFF388E3C, 'screen': const TouristScreen()},
       {'icon': Icons.restaurant, 'label': 'Food', 'color': 0xFFAD1457, 'screen': const FoodScreen()},
-      {'icon': Icons.account_balance_wallet, 'label': 'Wallet', 'color': 0xFF4527A0, 'screen': const WalletScreen()},
-      {'icon': Icons.person, 'label': 'Profile', 'color': 0xFF37474F, 'screen': const ProfileScreen()},
+      {'icon': Icons.delivery_dining, 'label': 'Delivery', 'color': 0xFFE65100, 'screen': const DeliveryScreen()},
       {'icon': Icons.drive_eta, 'label': 'Driver Panel', 'color': 0xFFE65100, 'screen': const DriverPanelScreen()},
       {'icon': Icons.local_car_wash, 'label': 'Eco-Shine', 'color': 0xFF00695C, 'screen': const EcoShineScreen()},
+      {'icon': Icons.account_balance_wallet, 'label': 'Wallet', 'color': 0xFF4527A0, 'screen': const WalletScreen()},
+      {'icon': Icons.person, 'label': 'Profile', 'color': 0xFF37474F, 'screen': const ProfileScreen()},
     ];
 
     return Scaffold(
@@ -183,25 +187,10 @@ class _HomePage extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 24),
-                  const Text('Choose Ride', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: 110,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _rideCard('Taxi', '120 ETB', Icons.local_taxi, const Color(0xFF2E7D32)),
-                        _rideCard('Bajaj', '40 ETB', Icons.electric_rickshaw, const Color(0xFFE65100)),
-                        _rideCard('Minibus', '15 ETB', Icons.directions_bus, const Color(0xFF1565C0)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                   const Text('Recent Trips', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   _tripCard('Piassa → Menahariya', 'Bajaj • 40 ETB', '10 min ago', Icons.electric_rickshaw, 0xFFE65100),
                   _tripCard('Adebabay → Stadium', 'Minibus • 15 ETB', 'Yesterday', Icons.directions_bus, 0xFF1565C0),
-                  _tripCard('Hawassa Lake → University', 'Taxi • 120 ETB', '2 days ago', Icons.local_taxi, 0xFF2E7D32),
                 ],
               ),
             ),
@@ -216,23 +205,6 @@ class _HomePage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
       child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-    );
-  }
-
-  Widget _rideCard(String name, String price, IconData icon, Color color) {
-    return Container(
-      width: 110,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withOpacity(0.2))),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 30),
-          const SizedBox(height: 4),
-          Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(price, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
-        ],
-      ),
     );
   }
 
