@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
+import 'payment_screen.dart';
+import 'map_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -9,16 +11,13 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final items = [
-      {'icon': Icons.history, 'label': 'Trip History', 'color': 0xFF2E7D32},
-      {'icon': Icons.payment, 'label': 'Payment Methods', 'color': 0xFF1565C0},
-      {'icon': Icons.star, 'label': 'My Reviews', 'color': 0xFFE65100},
-      {
-        'icon': Icons.notifications,
-        'label': 'Notifications',
-        'color': 0xFF4527A0,
-      },
-      {'icon': Icons.language, 'label': 'Language', 'color': 0xFF00695C},
-      {'icon': Icons.help, 'label': 'Help & Support', 'color': 0xFF37474F},
+      {'icon': Icons.history, 'label': 'Trip History', 'color': 0xFF2E7D32, 'screen': null},
+      {'icon': Icons.payment, 'label': 'Payment Methods', 'color': 0xFF1565C0, 'screen': const PaymentScreen()},
+      {'icon': Icons.map, 'label': 'City Map', 'color': 0xFF00695C, 'screen': const MapScreen()},
+      {'icon': Icons.star, 'label': 'My Reviews', 'color': 0xFFE65100, 'screen': null},
+      {'icon': Icons.notifications, 'label': 'Notifications', 'color': 0xFF4527A0, 'screen': null},
+      {'icon': Icons.language, 'label': 'Language', 'color': 0xFF00695C, 'screen': null},
+      {'icon': Icons.help, 'label': 'Help & Support', 'color': 0xFF37474F, 'screen': null},
     ];
 
     return Scaffold(
@@ -91,7 +90,11 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       title: Text(item['label'] as String),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () {},
+                      onTap: () {
+                        if (item['screen'] != null) {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => item['screen'] as Widget));
+                        }
+                      },
                     ),
                   ),
                 ),

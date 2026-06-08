@@ -6,6 +6,8 @@ import 'delivery_screen.dart';
 import 'food_screen.dart';
 import 'wallet_screen.dart';
 import 'profile_screen.dart';
+import 'driver_panel_screen.dart';
+import 'eco_shine_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,6 +59,8 @@ class _HomePage extends StatelessWidget {
       {'icon': Icons.restaurant, 'label': 'Food', 'color': 0xFFAD1457, 'screen': const FoodScreen()},
       {'icon': Icons.account_balance_wallet, 'label': 'Wallet', 'color': 0xFF4527A0, 'screen': const WalletScreen()},
       {'icon': Icons.person, 'label': 'Profile', 'color': 0xFF37474F, 'screen': const ProfileScreen()},
+      {'icon': Icons.drive_eta, 'label': 'Driver Panel', 'color': 0xFFE65100, 'screen': const DriverPanelScreen()},
+      {'icon': Icons.local_car_wash, 'label': 'Eco-Shine', 'color': 0xFF00695C, 'screen': const EcoShineScreen()},
     ];
 
     return Scaffold(
@@ -78,7 +82,7 @@ class _HomePage extends StatelessWidget {
                   ),
                 ),
                 padding: const EdgeInsets.fromLTRB(20, 40, 20, 10),
-                child: SingleChildScrollView( // Fixes potential overflow
+                child: SingleChildScrollView(
                   physics: const NeverScrollableScrollPhysics(),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
