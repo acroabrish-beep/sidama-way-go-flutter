@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/ai_assistant_provider.dart';
+import '../providers/language_provider.dart';
 import '../models/ai_message.dart';
 
 class AiAssistantScreen extends StatefulWidget {
@@ -16,10 +17,11 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AiAssistantProvider>(context);
+    final lang = Provider.of<LanguageProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Assistant'),
+        title: Text(lang.translate('ai_assistant')),
       ),
       body: Column(
         children: [
@@ -60,9 +62,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                 Expanded(
                   child: TextField(
                     controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Ask me anything...',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
+                    onSubmitted: (v) {
+                      if (v.isNotEmpty) {
+                        provider.sendMessage(v, lang.currentLanguage);
+                        _controller.clear();
+                      }
+                    },
+                    decoration: InputDecoration(
+                      hintText: lang.translate('search_dest'),
+                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))),
                     ),
                   ),
                 ),
@@ -70,7 +78,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   icon: const Icon(Icons.send),
                   onPressed: () {
                     if (_controller.text.isNotEmpty) {
-                      provider.sendMessage(_controller.text);
+                      provider.sendMessage(_controller.text, lang.currentLanguage);
                       _controller.clear();
                     }
                   },
@@ -83,8 +91,12 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.mic),
         onPressed: () {
+          // Voice Simulation
+          String voiceQuery = "Tell me about transport";
+          if (lang.currentLanguage == AppLanguage.amharic) voiceQuery = "ስለ ትራንስፖርት ንገረኝ";
+          provider.sendMessage(voiceQuery, lang.currentLanguage);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Simulating Voice: "Welcome to Sidama Way Go. Where would you like to go?"')),
+             SnackBar(content: Text('Simulated Voice: "$voiceQuery"')),
           );
         },
       ),

@@ -6,6 +6,8 @@ import 'providers/tracking_provider.dart';
 import 'providers/ai_assistant_provider.dart';
 import 'screens/splash_screen.dart';
 
+import 'providers/language_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -14,6 +16,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => TrackingProvider()),
         ChangeNotifierProvider(create: (_) => AiAssistantProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: const SmartMobilityApp(),
     ),

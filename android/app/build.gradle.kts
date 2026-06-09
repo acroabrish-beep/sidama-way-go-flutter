@@ -27,8 +27,8 @@ android {
         applicationId = "com.sidama.sidama_way_go"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 21
+        targetSdk = flutter.targetSdk
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

@@ -16,6 +16,16 @@ class EcoShineStationScreen extends StatelessWidget {
           children: [
             const Text('Station Status: Piazza Hub', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.network(
+                'https://images.unsplash.com/photo-1509391366360-2e959784a276?q=80&w=1000&auto=format&fit=crop',
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 16),
             const Row(
               children: [
                 Expanded(child: _SolarStatusCard()),
@@ -31,6 +41,22 @@ class EcoShineStationScreen extends StatelessWidget {
                 title: Text('Customers in Queue: 2'),
                 subtitle: Text('Estimated wait: 10 mins'),
                 trailing: Icon(Icons.check_circle, color: Colors.green),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text('Eco-Tech Infrastructure', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _infraImage('https://images.unsplash.com/photo-1613665813446-82a78c468a1d?q=80&w=500&auto=format&fit=crop'),
+                  const SizedBox(width: 12),
+                  _infraImage('https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?q=80&w=500&auto=format&fit=crop'),
+                  const SizedBox(width: 12),
+                  _infraImage('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=500&auto=format&fit=crop'),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -64,6 +90,13 @@ class EcoShineStationScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _infraImage(String url) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(15),
+      child: Image.network(url, width: 160, fit: BoxFit.cover),
     );
   }
 }
@@ -117,10 +150,7 @@ class _WaterStatusCard extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            CustomPaint(
-              size: const Size(40, 40),
-              painter: _WaterDropPainter(),
-            ),
+            const Icon(Icons.opacity, color: Colors.blue, size: 40),
             const SizedBox(height: 8),
             const Text('Recycling', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
@@ -133,22 +163,4 @@ class _WaterStatusCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _WaterDropPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blue
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    path.moveTo(size.width / 2, 0);
-    path.quadraticBezierTo(size.width, size.height * 0.7, size.width / 2, size.height);
-    path.quadraticBezierTo(0, size.height * 0.7, size.width / 2, 0);
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

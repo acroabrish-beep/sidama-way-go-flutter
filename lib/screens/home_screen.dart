@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../maps/realtime_map_screen.dart';
 import '../tourism/tourism_screen.dart';
 import '../healthcare/healthcare_screen.dart';
 import '../pharmacy/pharmacy_screen.dart';
 import '../contract_ride/contract_ride_screen.dart';
+import '../providers/language_provider.dart';
+import '../providers/tracking_provider.dart';
 import 'profile_screen.dart';
 import 'bus_track_screen.dart';
 import 'ai_assistant_screen.dart';
@@ -13,6 +16,7 @@ import 'government_fleet_screen.dart';
 import 'public_transport_screen.dart';
 import 'delivery_services_screen.dart';
 import 'eco_shine_station_screen.dart';
+import 'map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,6 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -41,12 +47,12 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: const Color(0xFF2E7D32),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Transit'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Explore'),
-          BottomNavigationBarItem(icon: Icon(Icons.assistant), label: 'AI Chat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: lang.translate('home')),
+          BottomNavigationBarItem(icon: const Icon(Icons.directions_bus), label: lang.translate('transit')),
+          BottomNavigationBarItem(icon: const Icon(Icons.map), label: lang.translate('explore')),
+          BottomNavigationBarItem(icon: const Icon(Icons.assistant), label: lang.translate('ai_chat')),
+          BottomNavigationBarItem(icon: const Icon(Icons.person), label: lang.translate('profile')),
         ],
       ),
     );
@@ -59,24 +65,47 @@ class _HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final lang = Provider.of<LanguageProvider>(context);
+
     final services = [
-      {'icon': Icons.local_taxi, 'label': 'Book Ride', 'color': 0xFF2E7D32, 'page': const RealtimeMapScreen()},
-      {'icon': Icons.directions_bus, 'label': 'Public Transit', 'color': 0xFF1B5E20, 'page': const PublicTransportScreen()},
-      {'icon': Icons.delivery_dining, 'label': 'Delivery', 'color': 0xFFE65100, 'page': const DeliveryServicesScreen()},
-      {'icon': Icons.local_car_wash, 'label': 'Eco-Shine', 'color': 0xFF00695C, 'page': const EcoShineStationScreen()},
-      {'icon': Icons.map, 'label': 'Tourism', 'color': 0xFF1565C0, 'page': const TourismScreen()},
-      {'icon': Icons.local_hospital, 'label': 'Healthcare', 'color': 0xFFAD1457, 'page': const HealthcareScreen()},
-      {'icon': Icons.dashboard, 'label': 'Admin Dash', 'color': 0xFF4527A0, 'page': const AdminDashboardScreen()},
-      {'icon': Icons.airport_shuttle, 'label': 'Gov Fleet', 'color': 0xFF37474F, 'page': const GovernmentFleetScreen()},
-      {'icon': Icons.assistant, 'label': 'AI Assistant', 'color': 0xFF009688, 'page': const AiAssistantScreen()},
+      {'icon': Icons.local_taxi, 'label': lang.translate('book_ride'), 'color': 0xFF2E7D32, 'page': const RealtimeMapScreen()},
+      {'icon': Icons.map, 'label': 'Live Map', 'color': 0xFF1565C0, 'page': const MapScreen()},
+      {'icon': Icons.directions_bus, 'label': lang.translate('public_transit'), 'color': 0xFF1B5E20, 'page': const PublicTransportScreen()},
+      {'icon': Icons.delivery_dining, 'label': lang.translate('delivery'), 'color': 0xFFE65100, 'page': const DeliveryServicesScreen()},
+      {'icon': Icons.local_car_wash, 'label': lang.translate('eco_shine'), 'color': 0xFF00695C, 'page': const EcoShineStationScreen()},
+      {'icon': Icons.map, 'label': lang.translate('tourism'), 'color': 0xFF1565C0, 'page': const TourismScreen()},
+      {'icon': Icons.local_hospital, 'label': lang.translate('healthcare'), 'color': 0xFFAD1457, 'page': const HealthcareScreen()},
+      {'icon': Icons.dashboard, 'label': lang.translate('admin_dash'), 'color': 0xFF4527A0, 'page': const AdminDashboardScreen()},
+      {'icon': Icons.airport_shuttle, 'label': lang.translate('gov_fleet'), 'color': 0xFF37474F, 'page': const GovernmentFleetScreen()},
+      {'icon': Icons.assistant, 'label': lang.translate('ai_assistant'), 'color': 0xFF009688, 'page': const AiAssistantScreen()},
     ];
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Smart Hawassa', style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(
+            'assets/images/app_logo.png',
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(Icons.auto_awesome);
+            },
+          ),
+        ),
+        title: Text(lang.translate('app_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
+        actions: [
+          PopupMenuButton<AppLanguage>(
+            icon: const Icon(Icons.language),
+            onSelected: (l) => lang.setLanguage(l),
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: AppLanguage.english, child: Text('English')),
+              const PopupMenuItem(value: AppLanguage.amharic, child: Text('አማርኛ')),
+              const PopupMenuItem(value: AppLanguage.sidaamuAfoo, child: Text('Sidaamu Afoo')),
+            ],
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -91,10 +120,10 @@ class _HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Hello, ${user?.email?.split('@')[0] ?? 'User'}! 👋',
+                  Text('${lang.translate('hello')}, ${user?.email?.split('@')[0] ?? 'User'}! 👋',
                       style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  const Text('Navigating the Heart of the Sidama Region.', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  Text(lang.translate('welcome_msg'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
                   const SizedBox(height: 20),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -102,11 +131,11 @@ class _HomePage extends StatelessWidget {
                       color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.white,
                       borderRadius: BorderRadius.circular(15)
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.search, color: Colors.grey),
-                        SizedBox(width: 10),
-                        Text('Search destinations...', style: TextStyle(color: Colors.grey)),
+                        const Icon(Icons.search, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Text(lang.translate('search_dest'), style: const TextStyle(color: Colors.grey)),
                       ],
                     ),
                   ),
@@ -118,7 +147,7 @@ class _HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Smart City Hub', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(lang.translate('smart_city_hub'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 15),
                   GridView.builder(
                     shrinkWrap: true,
@@ -170,7 +199,7 @@ class _HomePage extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 24),
-                  _buildEcoStatus(context),
+                  _buildEcoStatus(context, lang),
                 ],
               ),
             ),
@@ -180,7 +209,7 @@ class _HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildEcoStatus(BuildContext context) {
+  Widget _buildEcoStatus(BuildContext context, LanguageProvider lang) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -192,18 +221,18 @@ class _HomePage extends StatelessWidget {
         children: [
           const Icon(Icons.wb_sunny, color: Colors.amber),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Eco-Shine Station Live', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text('Piazza Station: 85% Solar Power', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                Text(lang.translate('eco_status'), style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(lang.translate('piazza_solar'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
           TextButton(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EcoShineStationScreen())),
-            child: const Text('View Status'),
+            child: Text(lang.translate('view_status')),
           )
         ],
       ),

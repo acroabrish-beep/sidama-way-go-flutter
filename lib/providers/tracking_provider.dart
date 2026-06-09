@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -7,81 +8,87 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/vehicle.dart';
 
 class TrackingProvider with ChangeNotifier {
-  LatLng? _currentPosition;
+  LatLng? _currentPosition = const LatLng(7.0504, 38.4955); // Hawassa Default
   final Set<Marker> _markers = {};
   final Set<Polyline> _polylines = {};
   bool _isTracking = false;
   StreamSubscription<Position>? _positionSubscription;
-  StreamSubscription<QuerySnapshot>? _vehicleSubscription;
+  Timer? _simulationTimer;
+
+  LatLng? _navigationDestination;
 
   LatLng? get currentPosition => _currentPosition;
   Set<Marker> get markers => _markers;
   Set<Polyline> get polylines => _polylines;
   bool get isTracking => _isTracking;
+  LatLng? get navigationDestination => _navigationDestination;
+
+  TrackingProvider() {
+    _startSimulation();
+  }
 
   Future<void> startTracking() async {
     if (_isTracking) return;
-
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
-    }
-
-    if (permission == LocationPermission.deniedForever) return;
-
     _isTracking = true;
-    _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      ),
-    ).listen((Position position) {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _updateUserLocationInFirestore(position);
-      _updateMarkers();
-      notifyListeners();
-    });
 
-    _listenToVehicles();
+    // In a real app, we use Geolocator.
+    // For simulation, we'll keep the static/animated current position.
+    _updateMarkers();
+    notifyListeners();
   }
 
-  void _updateUserLocationInFirestore(Position position) {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        'lastLocation': GeoPoint(position.latitude, position.longitude),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
-  }
+  void _startSimulation() {
+    // Simulated vehicles in Hawassa
+    List<Map<String, dynamic>> simulatedVehicles = [
+      {'id': 'v1', 'type': 'Minibus', 'pos': const LatLng(7.050, 38.485), 'speed': 0.0002},
+      {'id': 'v2', 'type': 'Bajaj', 'pos': const LatLng(7.060, 38.470), 'speed': 0.0003},
+      {'id': 'v3', 'type': 'Motor', 'pos': const LatLng(7.045, 38.495), 'speed': 0.0004},
+    ];
 
-  void _listenToVehicles() {
-    _vehicleSubscription = FirebaseFirestore.instance
-        .collection('vehicles')
-        .where('status', isEqualTo: 'online')
-        .snapshots()
-        .listen((snapshot) {
-      _markers.removeWhere((m) => m.markerId.value.startsWith('v_'));
-      for (var doc in snapshot.docs) {
-        final vehicle = Vehicle.fromFirestore(doc);
+    _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      for (var v in simulatedVehicles) {
+        LatLng oldPos = v['pos'];
+        // Move slightly towards a random direction or fixed path
+        double newLat = oldPos.latitude + (Random().nextDouble() - 0.5) * v['speed'];
+        double newLng = oldPos.longitude + (Random().nextDouble() - 0.5) * v['speed'];
+        v['pos'] = LatLng(newLat, newLng);
+
+        _markers.removeWhere((m) => m.markerId.value == v['id']);
         _markers.add(
           Marker(
-            markerId: MarkerId('v_${vehicle.id}'),
-            position: LatLng(vehicle.location.latitude, vehicle.location.longitude),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-            infoWindow: InfoWindow(
-              title: '${vehicle.type} - ${vehicle.plateNumber}',
-              snippet: 'Driver: ${vehicle.driverName}',
+            markerId: MarkerId(v['id']),
+            position: v['pos'],
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              v['type'] == 'Minibus' ? BitmapDescriptor.hueBlue :
+              v['type'] == 'Bajaj' ? BitmapDescriptor.hueYellow : BitmapDescriptor.hueOrange
             ),
+            infoWindow: InfoWindow(title: v['type'], snippet: 'Live Tracking'),
           ),
         );
       }
       notifyListeners();
     });
+  }
+
+  void navigateTo(LatLng dest) {
+    _navigationDestination = dest;
+    _polylines.clear();
+    _polylines.add(
+      Polyline(
+        polylineId: const PolylineId('route'),
+        points: [_currentPosition!, dest],
+        color: Colors.blue,
+        width: 5,
+        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+      ),
+    );
+    notifyListeners();
+  }
+
+  void clearNavigation() {
+    _navigationDestination = null;
+    _polylines.clear();
+    notifyListeners();
   }
 
   void _updateMarkers() {
@@ -101,7 +108,7 @@ class TrackingProvider with ChangeNotifier {
   @override
   void dispose() {
     _positionSubscription?.cancel();
-    _vehicleSubscription?.cancel();
+    _simulationTimer?.cancel();
     super.dispose();
   }
 }

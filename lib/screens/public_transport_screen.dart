@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../providers/language_provider.dart';
+import 'package:provider/provider.dart';
+
 class PublicTransportScreen extends StatelessWidget {
   const PublicTransportScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     final routes = [
       {'route': 'Piazza - Industrial Park', 'bus': 'Line 4', 'eta': '4 mins'},
       {'route': 'Alamura - Central Market', 'bus': 'Line 12', 'eta': '12 mins'},
@@ -13,17 +17,17 @@ class PublicTransportScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Public Transport'),
+        title: Text(lang.translate('public_transit')),
       ),
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: TextField(
               decoration: InputDecoration(
-                hintText: 'Where are you going?',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+                hintText: lang.translate('search_dest'),
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
               ),
             ),
           ),
