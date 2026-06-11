@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../maps/realtime_map_screen.dart';
+import '../providers/location_provider.dart';
+import '../screens/smart_city_map_screen.dart';
 
 class TourismScreen extends StatelessWidget {
   const TourismScreen({super.key});
@@ -109,6 +113,18 @@ class TourismScreen extends StatelessWidget {
   }
 
   void _showDetail(BuildContext context, Map<String, dynamic> item) {
+    final locationProv = context.read<LocationProvider>();
+    double distance = 0;
+
+    if (locationProv.currentPosition != null) {
+      distance = Geolocator.distanceBetween(
+        locationProv.currentPosition!.latitude,
+        locationProv.currentPosition!.longitude,
+        item['lat'],
+        item['lng'],
+      ) / 1000; // in km
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -131,8 +147,27 @@ class TourismScreen extends StatelessWidget {
                     child: Text(item['image'], style: const TextStyle(fontSize: 60)),
                   ),
                   const SizedBox(height: 16),
-                  Text(item['name'], style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text(item['category'], style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.w600)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item['name'], style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                            Text(item['category'], style: TextStyle(color: Colors.green[800], fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                      ),
+                      if (distance > 0)
+                        Column(
+                          children: [
+                            const Icon(Icons.directions_walk, color: Colors.grey, size: 20),
+                            Text('${distance.toStringAsFixed(1)} km', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                    ],
+                  ),
                   const Divider(height: 32),
                   const Text('Description', style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(item['desc']),
@@ -162,11 +197,7 @@ class TourismScreen extends StatelessWidget {
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        // Future: In a real app, use a proper router or global key to switch tabs.
-                        // For now, we push the screen or show snackbar.
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Routing to Map...')),
-                        );
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartCityMapScreen()));
                       },
                       icon: const Icon(Icons.map),
                       label: const Text('View on Map'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'vehicle_registration_screen.dart';
 import 'driver_registration_screen.dart';
+import 'admin_location_dashboard.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -9,14 +10,16 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('City Admin Dashboard'),
           backgroundColor: const Color(0xFF37474F),
           foregroundColor: Colors.white,
           bottom: const TabBar(
+            isScrollable: true,
             tabs: [
+              Tab(icon: Icon(Icons.location_on), text: 'Live Map'),
               Tab(icon: Icon(Icons.business), text: 'Terminals'),
               Tab(icon: Icon(Icons.local_taxi), text: 'City Taxi'),
               Tab(icon: Icon(Icons.directions_car), text: 'Vehicles'),
@@ -25,6 +28,7 @@ class AdminDashboardScreen extends StatelessWidget {
         ),
         body: const TabBarView(
           children: [
+            AdminLocationDashboard(),
             _TerminalsTab(),
             _CityTaxiTab(),
             _VehiclesTab(),

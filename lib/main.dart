@@ -13,6 +13,8 @@ import 'providers/city_platform_provider.dart';
 import 'providers/extended_platform_provider.dart';
 import 'providers/mobility_provider.dart';
 import 'providers/smart_city_provider.dart';
+import 'providers/location_provider.dart';
+import 'providers/map_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +29,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SmartCityProvider()),
         ChangeNotifierProvider(create: (_) => CityPlatformProvider()),
         ChangeNotifierProvider(create: (_) => ExtendedPlatformProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(create: (_) => MapProvider()),
       ],
       child: const SmartMobilityApp(),
     ),

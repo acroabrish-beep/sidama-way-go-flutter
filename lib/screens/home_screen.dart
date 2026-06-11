@@ -14,6 +14,9 @@ import 'pharmacy_screen.dart';
 import 'food_screen.dart';
 import 'wallet_screen.dart';
 import 'profile_screen.dart';
+import 'smart_city_map_screen.dart';
+import 'admin_location_dashboard.dart';
+import '../providers/location_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     const _MainHub(),
     const TerminalScreen(),
-    const MapScreen(),
+    const SmartCityMapScreen(),
     const ProfileScreen(),
   ];
 
@@ -44,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Terminal'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'City Map'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
@@ -67,6 +70,7 @@ class _MainHub extends StatelessWidget {
     final lang = Provider.of<LanguageProvider>(context);
 
     final List<Map<String, dynamic>> services = [
+      {'title': 'City Map', 'icon': Icons.map, 'color': 0xFF1976D2, 'screen': const SmartCityMapScreen()},
       {'title': 'Bus Terminal', 'icon': Icons.directions_bus_filled, 'color': 0xFF1565C0, 'screen': const TerminalScreen()},
       {'title': 'City Taxi', 'icon': Icons.local_taxi, 'color': 0xFFE65100, 'screen': const CityTaxiScreen()},
       {'title': 'Taxi Queue', 'icon': Icons.queue, 'color': 0xFF6A1B9A, 'screen': const QueueScreen()},
@@ -77,6 +81,7 @@ class _MainHub extends StatelessWidget {
       {'title': 'Food Delivery', 'icon': Icons.restaurant, 'color': 0xFFF57C00, 'screen': const FoodScreen()},
       {'title': 'Wallet', 'icon': Icons.account_balance_wallet, 'color': 0xFF4527A0, 'screen': const WalletScreen()},
       {'title': 'Admin', 'icon': Icons.admin_panel_settings, 'color': 0xFF37474F, 'screen': const AdminDashboardScreen()},
+      {'title': 'Live Activity', 'icon': Icons.insights, 'color': 0xFF212121, 'screen': const AdminLocationDashboard()},
     ];
 
     return Scaffold(

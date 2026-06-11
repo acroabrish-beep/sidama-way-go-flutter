@@ -7,31 +7,34 @@ import '../services/location_service.dart';
 class MapProvider with ChangeNotifier {
   final LocationService _locationService = LocationService();
   LatLng? _currentLocation;
-  Set<Marker> _markers = {};
-  GoogleMapController? _mapController;
+  final Set<Marker> _markers = {};
 
   LatLng? get currentLocation => _currentLocation;
   Set<Marker> get markers => _markers;
 
   void setMapController(GoogleMapController controller) {
-    _mapController = controller;
+    // Controller can be used here if needed
   }
 
   Future<void> initializeLocation() async {
     try {
-      Position position = await _locationService.getCurrentLocation();
-      _currentLocation = LatLng(position.latitude, position.longitude);
-      _updateUserMarker();
-      notifyListeners();
-
-      _locationService.getLocationStream().listen((Position position) {
+      Position? position = await _locationService.getCurrentLocation();
+      if (position != null) {
         _currentLocation = LatLng(position.latitude, position.longitude);
-        _locationService.updateLocationInFirestore(position);
         _updateUserMarker();
         notifyListeners();
+      }
+
+      // Start live tracking from service
+      _locationService.startLiveTracking('user');
+
+      // We can listen to all locations using the service's stream if needed
+      _locationService.getAllCityLocations().listen((locations) {
+         // Logic to update markers from city locations if needed
       });
+
     } catch (e) {
-      print("Error initializing location: $e");
+      debugPrint("Error initializing location: $e");
     }
   }
 
@@ -53,7 +56,9 @@ class MapProvider with ChangeNotifier {
     FirebaseFirestore.instance.collection('vehicles').snapshots().listen((snapshot) {
       for (var doc in snapshot.docs) {
         final data = doc.data();
-        final GeoPoint point = data['liveLocation'];
+        final GeoPoint? point = data['liveLocation'];
+        if (point == null) continue;
+
         final markerId = MarkerId(doc.id);
 
         _markers.removeWhere((m) => m.markerId == markerId);

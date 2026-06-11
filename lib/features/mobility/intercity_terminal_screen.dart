@@ -92,7 +92,7 @@ class _IntercityTerminalScreenState extends State<IntercityTerminalScreen> {
           const SizedBox(height: 20),
           Expanded(
             child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, spacing: 10, mainAxisSpacing: 10),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, crossAxisSpacing: 10, mainAxisSpacing: 10),
               itemCount: bus.totalSeats,
               itemBuilder: (context, index) {
                 final seatNum = index + 1;

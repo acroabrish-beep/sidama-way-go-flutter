@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 
 class EmergencyScreen extends StatelessWidget {
   const EmergencyScreen({super.key});
@@ -35,12 +36,24 @@ class EmergencyScreen extends StatelessWidget {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
+      final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
       await FirebaseFirestore.instance.collection('emergency_requests').add({
         'type': type,
         'userId': user?.uid ?? 'anonymous',
         'timestamp': FieldValue.serverTimestamp(),
         'status': 'pending',
-        'location': 'Hawassa, Ethiopia', // In real app use Geolocator
+        'location': GeoPoint(position.latitude, position.longitude),
+      });
+
+      // Also save to emergency_locations for the map
+      await FirebaseFirestore.instance.collection('emergency_locations').doc(user?.uid ?? 'anon_${DateTime.now().millisecondsSinceEpoch}').set({
+        'type': 'emergency',
+        'subType': type,
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'userId': user?.uid ?? 'anonymous',
+        'timestamp': FieldValue.serverTimestamp(),
       });
 
       if (!context.mounted) return;
