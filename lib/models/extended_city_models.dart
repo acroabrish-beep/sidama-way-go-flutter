@@ -104,7 +104,7 @@ class FoodMenuItem {
   }
 }
 
-class Order {
+class CityOrder {
   final String id;
   final String userId;
   final String businessId; // Restaurant, Pharmacy, etc.
@@ -115,11 +115,11 @@ class Order {
   final DateTime timestamp;
   final String? driverId;
 
-  Order({required this.id, required this.userId, required this.businessId, required this.type, required this.items, required this.totalAmount, required this.status, required this.timestamp, this.driverId});
+  CityOrder({required this.id, required this.userId, required this.businessId, required this.type, required this.items, required this.totalAmount, required this.status, required this.timestamp, this.driverId});
 
-  factory Order.fromFirestore(DocumentSnapshot doc) {
+  factory CityOrder.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map;
-    return Order(
+    return CityOrder(
       id: doc.id,
       userId: data['userId'] ?? '',
       businessId: data['businessId'] ?? '',

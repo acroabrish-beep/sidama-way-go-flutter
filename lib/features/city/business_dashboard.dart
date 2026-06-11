@@ -13,7 +13,7 @@ class BusinessDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('$businessType Dashboard')),
-      body: StreamBuilder<List<Order>>(
+      body: StreamBuilder<List<CityOrder>>(
         stream: ExtendedPlatformService().getBusinessOrders(businessId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -49,7 +49,7 @@ class BusinessDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatOverview(List<Order> orders) {
+  Widget _buildStatOverview(List<CityOrder> orders) {
     double revenue = orders.fold(0, (sum, item) => sum + item.totalAmount);
     return Row(
       children: [

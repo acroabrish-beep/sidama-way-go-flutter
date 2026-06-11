@@ -60,11 +60,11 @@ class ExtendedPlatformService {
   }
 
   // Business Owner Access
-  Stream<List<Order>> getBusinessOrders(String businessId) {
+  Stream<List<CityOrder>> getBusinessOrders(String businessId) {
     return _db.collection('orders')
       .where('businessId', isEqualTo: businessId)
       .orderBy('timestamp', descending: true)
       .snapshots()
-      .map((snap) => snap.docs.map((doc) => Order.fromFirestore(doc)).toList());
+      .map((snap) => snap.docs.map((doc) => CityOrder.fromFirestore(doc)).toList());
   }
 }

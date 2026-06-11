@@ -11,6 +11,8 @@ import 'providers/language_provider.dart';
 import 'providers/city_platform_provider.dart';
 
 import 'providers/extended_platform_provider.dart';
+import 'providers/mobility_provider.dart';
+import 'providers/smart_city_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
