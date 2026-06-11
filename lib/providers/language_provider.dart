@@ -18,7 +18,7 @@ class LanguageProvider with ChangeNotifier {
 
   final Map<AppLanguage, Map<String, String>> _translations = {
     AppLanguage.english: {
-      'app_title': 'Smart Hawassa',
+      'app_title': 'Sidama Way Go',
       'home': 'Home',
       'transit': 'Transit',
       'explore': 'Explore',
@@ -44,7 +44,7 @@ class LanguageProvider with ChangeNotifier {
       'station_status': 'Station Status: Piazza Hub',
     },
     AppLanguage.amharic: {
-      'app_title': 'ስማርት ሀዋሳ',
+      'app_title': 'ሲዳማ ዌይ ጎ',
       'home': 'መነሻ',
       'transit': 'ትራንዚት',
       'explore': 'አስስ',
@@ -70,7 +70,7 @@ class LanguageProvider with ChangeNotifier {
       'station_status': 'የጣቢያ ሁኔታ: ፒያሳ ማዕከል',
     },
     AppLanguage.sidaamuAfoo: {
-      'app_title': 'Smart Hawaasa',
+      'app_title': 'Sidama Way Go',
       'home': 'Hawaas',
       'transit': 'Transit',
       'explore': 'Ha\'risi',

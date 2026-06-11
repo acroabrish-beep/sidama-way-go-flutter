@@ -8,6 +8,10 @@ import 'screens/splash_screen.dart';
 
 import 'providers/language_provider.dart';
 
+import 'providers/city_platform_provider.dart';
+
+import 'providers/extended_platform_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -17,6 +21,10 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TrackingProvider()),
         ChangeNotifierProvider(create: (_) => AiAssistantProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(create: (_) => MobilityProvider()),
+        ChangeNotifierProvider(create: (_) => SmartCityProvider()),
+        ChangeNotifierProvider(create: (_) => CityPlatformProvider()),
+        ChangeNotifierProvider(create: (_) => ExtendedPlatformProvider()),
       ],
       child: const SmartMobilityApp(),
     ),

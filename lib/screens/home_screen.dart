@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../maps/realtime_map_screen.dart';
-import '../tourism/tourism_screen.dart';
-import '../healthcare/healthcare_screen.dart';
-import '../pharmacy/pharmacy_screen.dart';
-import '../contract_ride/contract_ride_screen.dart';
 import '../providers/language_provider.dart';
-import '../providers/tracking_provider.dart';
-import 'profile_screen.dart';
-import 'bus_track_screen.dart';
-import 'ai_assistant_screen.dart';
+import 'terminal_screen.dart';
+import 'city_taxi_screen.dart';
+import 'queue_screen.dart';
+import 'emergency_screen.dart';
 import 'admin_dashboard_screen.dart';
-import 'government_fleet_screen.dart';
-import 'public_transport_screen.dart';
-import 'delivery_services_screen.dart';
-import 'eco_shine_station_screen.dart';
 import 'map_screen.dart';
+import 'tourist_screen.dart';
+import 'healthcare_screen.dart';
+import 'pharmacy_screen.dart';
+import 'food_screen.dart';
+import 'wallet_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,17 +25,14 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    const _HomePage(),
-    const PublicTransportScreen(),
-    const RealtimeMapScreen(),
-    const AiAssistantScreen(),
+    const _MainHub(),
+    const TerminalScreen(),
+    const MapScreen(),
     const ProfileScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final lang = Provider.of<LanguageProvider>(context);
-
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -47,194 +41,150 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: const Color(0xFF2E7D32),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: [
-          BottomNavigationBarItem(icon: const Icon(Icons.home), label: lang.translate('home')),
-          BottomNavigationBarItem(icon: const Icon(Icons.directions_bus), label: lang.translate('transit')),
-          BottomNavigationBarItem(icon: const Icon(Icons.map), label: lang.translate('explore')),
-          BottomNavigationBarItem(icon: const Icon(Icons.assistant), label: lang.translate('ai_chat')),
-          BottomNavigationBarItem(icon: const Icon(Icons.person), label: lang.translate('profile')),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Terminal'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EmergencyScreen())),
+        backgroundColor: Colors.red,
+        tooltip: 'Emergency',
+        child: const Icon(Icons.emergency, color: Colors.white),
       ),
     );
   }
 }
 
-class _HomePage extends StatelessWidget {
-  const _HomePage();
+class _MainHub extends StatelessWidget {
+  const _MainHub();
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final lang = Provider.of<LanguageProvider>(context);
 
-    final services = [
-      {'icon': Icons.local_taxi, 'label': lang.translate('book_ride'), 'color': 0xFF2E7D32, 'page': const RealtimeMapScreen()},
-      {'icon': Icons.map, 'label': 'Live Map', 'color': 0xFF1565C0, 'page': const MapScreen()},
-      {'icon': Icons.directions_bus, 'label': lang.translate('public_transit'), 'color': 0xFF1B5E20, 'page': const PublicTransportScreen()},
-      {'icon': Icons.delivery_dining, 'label': lang.translate('delivery'), 'color': 0xFFE65100, 'page': const DeliveryServicesScreen()},
-      {'icon': Icons.local_car_wash, 'label': lang.translate('eco_shine'), 'color': 0xFF00695C, 'page': const EcoShineStationScreen()},
-      {'icon': Icons.map, 'label': lang.translate('tourism'), 'color': 0xFF1565C0, 'page': const TourismScreen()},
-      {'icon': Icons.local_hospital, 'label': lang.translate('healthcare'), 'color': 0xFFAD1457, 'page': const HealthcareScreen()},
-      {'icon': Icons.dashboard, 'label': lang.translate('admin_dash'), 'color': 0xFF4527A0, 'page': const AdminDashboardScreen()},
-      {'icon': Icons.airport_shuttle, 'label': lang.translate('gov_fleet'), 'color': 0xFF37474F, 'page': const GovernmentFleetScreen()},
-      {'icon': Icons.assistant, 'label': lang.translate('ai_assistant'), 'color': 0xFF009688, 'page': const AiAssistantScreen()},
+    final List<Map<String, dynamic>> services = [
+      {'title': 'Bus Terminal', 'icon': Icons.directions_bus_filled, 'color': 0xFF1565C0, 'screen': const TerminalScreen()},
+      {'title': 'City Taxi', 'icon': Icons.local_taxi, 'color': 0xFFE65100, 'screen': const CityTaxiScreen()},
+      {'title': 'Taxi Queue', 'icon': Icons.queue, 'color': 0xFF6A1B9A, 'screen': const QueueScreen()},
+      {'title': 'Emergency', 'icon': Icons.emergency, 'color': 0xFFC62828, 'screen': const EmergencyScreen()},
+      {'title': 'Tourist Guide', 'icon': Icons.map, 'color': 0xFF00897B, 'screen': const TouristScreen()},
+      {'title': 'Healthcare', 'icon': Icons.local_hospital, 'color': 0xFFD32F2F, 'screen': const HealthcareScreen()},
+      {'title': 'Pharmacy', 'icon': Icons.local_pharmacy, 'color': 0xFF388E3C, 'screen': const PharmacyScreen()},
+      {'title': 'Food Delivery', 'icon': Icons.restaurant, 'color': 0xFFF57C00, 'screen': const FoodScreen()},
+      {'title': 'Wallet', 'icon': Icons.account_balance_wallet, 'color': 0xFF4527A0, 'screen': const WalletScreen()},
+      {'title': 'Admin', 'icon': Icons.admin_panel_settings, 'color': 0xFF37474F, 'screen': const AdminDashboardScreen()},
     ];
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset(
-            'assets/images/app_logo.png',
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.auto_awesome);
-            },
-          ),
-        ),
-        title: Text(lang.translate('app_title'), style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF2E7D32),
-        foregroundColor: Colors.white,
-        actions: [
-          PopupMenuButton<AppLanguage>(
-            icon: const Icon(Icons.language),
-            onSelected: (l) => lang.setLanguage(l),
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: AppLanguage.english, child: Text('English')),
-              const PopupMenuItem(value: AppLanguage.amharic, child: Text('አማርኛ')),
-              const PopupMenuItem(value: AppLanguage.sidaamuAfoo, child: Text('Sidaamu Afoo')),
-            ],
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: Color(0xFF2E7D32),
-                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${lang.translate('hello')}, ${user?.email?.split('@')[0] ?? 'User'}! 👋',
-                      style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text(lang.translate('welcome_msg'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.white,
-                      borderRadius: BorderRadius.circular(15)
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.search, color: Colors.grey),
-                        const SizedBox(width: 10),
-                        Text(lang.translate('search_dest'), style: const TextStyle(color: Colors.grey)),
-                      ],
-                    ),
+      backgroundColor: const Color(0xFFF8F9FA),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 180,
+            pinned: true,
+            backgroundColor: const Color(0xFF2E7D32),
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hello, ${user?.email?.split('@')[0] ?? 'Citizen'}! 👋',
+                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const Text(
+                      'Hawassa Smart City Mobility',
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
+                  ],
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(lang.translate('smart_city_hub'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 15),
+                  const Text('City Services', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
                   GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 12,
+                      crossAxisCount: 4,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 0.9,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.8,
                     ),
                     itemCount: services.length,
                     itemBuilder: (context, index) {
                       final s = services[index];
                       return GestureDetector(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => s['page'] as Widget)),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4)
-                              )
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Color(s['color'] as int).withOpacity(0.1),
-                                  shape: BoxShape.circle
-                                ),
-                                child: Icon(s['icon'] as IconData, size: 28, color: Color(s['color'] as int)),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => s['screen'])),
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Color(s['color']).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                s['label'] as String,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
+                              child: Icon(s['icon'], color: Color(s['color']), size: 28),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              s['title'],
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
                       );
                     },
                   ),
                   const SizedBox(height: 24),
-                  _buildEcoStatus(context, lang),
+                  const Text('Announcements', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  _announcementCard(
+                    'Bus Service Update',
+                    'New routes added to the New Terminal for Bahir Dar and Jimma.',
+                    Colors.blue,
+                  ),
+                  _announcementCard(
+                    'Health Notice',
+                    'Vaccination drive starting Monday at Hawassa Referral Hospital.',
+                    Colors.red,
+                  ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEcoStatus(BuildContext context, LanguageProvider lang) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF00695C).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF00695C).withOpacity(0.3))
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.wb_sunny, color: Colors.amber),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(lang.translate('eco_status'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(lang.translate('piazza_solar'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EcoShineStationScreen())),
-            child: Text(lang.translate('view_status')),
-          )
-        ],
+  Widget _announcementCard(String title, String desc, Color color) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(backgroundColor: color.withOpacity(0.1), child: Icon(Icons.campaign, color: color)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(desc),
       ),
     );
   }

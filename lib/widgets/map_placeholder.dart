@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-// Hawassa Map Placeholder for Web/Offline support
+// Hawassa Map Placeholder for Web/Offline support with Live Simulation
 class HawassaMapPlaceholder extends StatelessWidget {
   final LatLng? userLocation;
   final Set<Marker> markers;
@@ -36,7 +36,7 @@ class HawassaMapPlaceholder extends StatelessWidget {
               label: 'You',
             ),
 
-          // Route Simulation
+          // Route Simulation (Explicit Path Line)
           if (userLocation != null && destination != null)
             CustomPaint(
               painter: RoutePainter(
@@ -46,13 +46,31 @@ class HawassaMapPlaceholder extends StatelessWidget {
               size: Size.infinite,
             ),
 
-          // Landmarks/Vehicles Markers
-          ...markers.map((m) => _PositionedMarker(
+          // Live Moving Vehicles & Landmarks
+          ...markers.map((m) {
+             IconData icon = Icons.location_on;
+             Color color = Colors.green;
+
+             // Dynamic styling based on Marker Info (Vehicle types)
+             final title = m.infoWindow.title?.toLowerCase() ?? "";
+             if (title.contains('minibus')) {
+               icon = Icons.directions_bus;
+               color = Colors.blue;
+             } else if (title.contains('bajaj')) {
+               icon = Icons.electric_rickshaw;
+               color = Colors.orange;
+             } else if (title.contains('motor')) {
+               icon = Icons.motorcycle;
+               color = Colors.red;
+             }
+
+             return _PositionedMarker(
                 location: m.position,
-                color: Colors.green,
-                icon: Icons.location_on,
+                color: color,
+                icon: icon,
                 label: m.infoWindow.title ?? '',
-              )),
+              );
+          }),
 
           // Destination Marker (if navigating)
           if (destination != null)
@@ -67,8 +85,8 @@ class HawassaMapPlaceholder extends StatelessWidget {
             top: 10,
             right: 10,
             child: Chip(
-              label: Text('Map Simulation', style: TextStyle(fontSize: 10)),
-              backgroundColor: Colors.orangeAccent,
+              label: Text('Live City Simulation', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.greenAccent,
             ),
           ),
         ],
@@ -92,22 +110,26 @@ class _PositionedMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Simple projection logic for placeholder (Hawassa focused)
+    // Coordinate mapping for placeholder visual (Hawassa focused)
     // Hawassa approx: 7.05, 38.48
     double x = (location.longitude - 38.45) * 5000 + 100;
     double y = (7.10 - location.latitude) * 5000 + 100;
 
     return Positioned(
-      left: x % 400, // Wrap or clamp for visual safety
-      top: y % 600,
+      left: x % (MediaQuery.of(context).size.width - 40),
+      top: y % (MediaQuery.of(context).size.height - 200),
       child: Column(
         children: [
           Icon(icon, color: color, size: 30),
-          if (label.isNotEmpty)
+          if (label.isNotEmpty && label != 'You')
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              color: Colors.white70,
-              child: Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: const [BoxShadow(blurRadius: 2, color: Colors.black26)]
+              ),
+              child: Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
             ),
         ],
       ),
@@ -119,15 +141,20 @@ class MapPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withOpacity(0.4)
       ..strokeWidth = 1.0;
 
-    for (double i = 0; i < size.width; i += 40) {
+    for (double i = 0; i < size.width; i += 50) {
       canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
     }
-    for (double i = 0; i < size.height; i += 40) {
+    for (double i = 0; i < size.height; i += 50) {
       canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
     }
+
+    // Simulate main roads
+    final roadPaint = Paint()..color = Colors.grey.shade300..strokeWidth = 15;
+    canvas.drawLine(Offset(size.width * 0.5, 0), Offset(size.width * 0.5, size.height), roadPaint);
+    canvas.drawLine(Offset(0, size.height * 0.4), Offset(size.width, size.height * 0.4), roadPaint);
   }
 
   @override
@@ -143,8 +170,8 @@ class RoutePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.blue
-      ..strokeWidth = 3.0
+      ..color = Colors.blue.withOpacity(0.8)
+      ..strokeWidth = 4.0
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
@@ -154,10 +181,16 @@ class RoutePainter extends CustomPainter {
     double y2 = (7.10 - end.latitude) * 5000 + 100;
 
     final path = Path();
-    path.moveTo(x1 % 400 + 15, y1 % 600 + 15);
-    path.lineTo(x2 % 400 + 15, y2 % 600 + 15);
+    // Centering the line relative to the icons (approx 15px offset)
+    double sx = x1 % (size.width - 40) + 15;
+    double sy = y1 % (size.height - 200) + 15;
+    double ex = x2 % (size.width - 40) + 15;
+    double ey = y2 % (size.height - 200) + 15;
 
-    // Draw dashed line
+    path.moveTo(sx, sy);
+    path.lineTo(ex, ey);
+
+    // Draw dashed route line
     double dashWidth = 10.0;
     double dashSpace = 5.0;
     double distance = 0.0;
