@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../providers/map_provider.dart';
 
@@ -11,6 +12,8 @@ class SmartMapScreen extends StatefulWidget {
 }
 
 class _SmartMapScreenState extends State<SmartMapScreen> {
+  final MapController _mapController = MapController();
+
   @override
   void initState() {
     super.initState();
@@ -34,15 +37,19 @@ class _SmartMapScreenState extends State<SmartMapScreen> {
           if (mapProv.currentLocation == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          return GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: mapProv.currentLocation!,
-              zoom: 14.0,
+          return FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: mapProv.currentLocation!,
+              initialZoom: 14.0,
             ),
-            markers: mapProv.markers,
-            onMapCreated: (controller) => mapProv.setMapController(controller),
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.sidama.sidama_way_go',
+              ),
+              MarkerLayer(markers: mapProv.markers.toList()),
+            ],
           );
         },
       ),

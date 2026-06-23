@@ -1,81 +1,86 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geolocator/geolocator.dart';
+import '../models/city_os_models.dart';
 
 class LocationService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   StreamSubscription<Position>? _positionStreamSubscription;
+  Timer? _updateTimer;
 
   /// Request permissions and get current location
   Future<Position?> getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return null;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return null;
-    }
-
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return null;
-      }
+      if (permission == LocationPermission.denied) return null;
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      return null;
-    }
+    if (permission == LocationPermission.deniedForever) return null;
 
     return await Geolocator.getCurrentPosition();
   }
 
-  /// Start live location tracking and save to Firebase
+  /// Start live location tracking every 10 seconds (Phase 2 Requirement)
   void startLiveTracking(String type) {
     _positionStreamSubscription?.cancel();
+    _updateTimer?.cancel();
 
     _positionStreamSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update every 10 meters
+        distanceFilter: 5,
       ),
     ).listen((Position position) {
-      _updateLocationInFirebase(position, type);
+      // We still update on significant movement, but the timer ensures periodic updates
+    });
+
+    _updateTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      final pos = await Geolocator.getCurrentPosition();
+      _updateLocationInFirebase(pos, type);
     });
   }
 
   void stopLiveTracking() {
     _positionStreamSubscription?.cancel();
+    _updateTimer?.cancel();
   }
 
   Future<void> _updateLocationInFirebase(Position position, String type) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
 
-    final data = {
-      'latitude': position.latitude,
-      'longitude': position.longitude,
-      'timestamp': FieldValue.serverTimestamp(),
-      'userId': user.uid,
-      'type': type, // 'user', 'taxi', 'bus'
-    };
+      final data = {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+        'speed': position.speed,
+        'heading': position.heading,
+        'lastUpdated': FieldValue.serverTimestamp(),
+        'userId': user.uid,
+        'type': type,
+      };
 
-    // Update in general locations
-    await _db.collection('locations').doc(user.uid).set(data, SetOptions(merge: true));
+      if (type == 'taxi') {
+        await _db.collection(CityOSCollection.driverLocations).doc(user.uid).set(data, SetOptions(merge: true));
+      } else if (type == 'bus') {
+        await _db.collection('bus_locations').doc(user.uid).set(data, SetOptions(merge: true));
+      }
 
-    // Update in specific collections based on type
-    if (type == 'taxi') {
-      await _db.collection('driver_locations').doc(user.uid).set(data, SetOptions(merge: true));
-    } else if (type == 'bus') {
-      await _db.collection('bus_locations').doc(user.uid).set(data, SetOptions(merge: true));
+      // Update in a general location log for smart city map
+      await _db.collection('locations').doc(user.uid).set(data, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint("Error updating location in Firebase: $e");
     }
   }
 
-  /// Get live streams for different categories
   Stream<List<Map<String, dynamic>>> getLiveLocations(String type) {
     return _db.collection('locations')
         .where('type', isEqualTo: type)
@@ -92,7 +97,6 @@ class LocationService {
       }).toList());
   }
 
-  /// Save static locations (Hotels, Hospitals, etc.)
   Future<void> saveStaticLocation(String collection, String id, Map<String, dynamic> data) async {
     await _db.collection(collection).doc(id).set({
       ...data,

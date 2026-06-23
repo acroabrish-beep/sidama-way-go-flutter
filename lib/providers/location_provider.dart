@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../services/location_service.dart';
 
@@ -7,11 +8,11 @@ class LocationProvider with ChangeNotifier {
   final LocationService _service = LocationService();
 
   Position? _currentPosition;
-  Set<Marker> _markers = {};
+  final List<Marker> _markers = [];
   bool _isLoading = true;
 
   Position? get currentPosition => _currentPosition;
-  Set<Marker> get markers => _markers;
+  List<Marker> get markers => _markers;
   bool get isLoading => _isLoading;
 
   LocationProvider() {
@@ -22,19 +23,28 @@ class LocationProvider with ChangeNotifier {
     _currentPosition = await _service.getCurrentLocation();
     if (_currentPosition != null) {
       _service.startLiveTracking('user');
-      _addMarker('user', LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 'My Location', BitmapDescriptor.hueAzure);
+      _addMarker('user', LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 'My Location', Colors.blue);
     }
     _isLoading = false;
     notifyListeners();
   }
 
-  void _addMarker(String id, LatLng position, String title, double hue) {
+  void _addMarker(String id, LatLng position, String title, Color color) {
     _markers.add(
       Marker(
-        markerId: MarkerId(id),
-        position: position,
-        infoWindow: InfoWindow(title: title),
-        icon: BitmapDescriptor.defaultMarkerWithHue(hue),
+        point: position,
+        width: 80,
+        height: 80,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.8), borderRadius: BorderRadius.circular(4)),
+              child: Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            ),
+            Icon(Icons.location_on, color: color, size: 40),
+          ],
+        ),
       ),
     );
   }
@@ -43,25 +53,25 @@ class LocationProvider with ChangeNotifier {
     _service.getAllCityLocations().listen((locations) {
       _markers.clear();
       if (_currentPosition != null) {
-        _addMarker('user', LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 'My Location', BitmapDescriptor.hueAzure);
+        _addMarker('user', LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 'My Location', Colors.blue);
       }
 
       for (var loc in locations) {
-        double hue = BitmapDescriptor.hueRed;
+        Color color = Colors.red;
         String type = loc['type'] ?? 'unknown';
 
-        if (type == 'taxi') hue = BitmapDescriptor.hueYellow;
-        else if (type == 'bus') hue = BitmapDescriptor.hueBlue;
-        else if (type == 'hotel') hue = BitmapDescriptor.hueGreen;
-        else if (type == 'pharmacy') hue = BitmapDescriptor.hueMagenta;
-        else if (type == 'hospital') hue = BitmapDescriptor.hueRed;
-        else if (type == 'tourism') hue = BitmapDescriptor.hueOrange;
+        if (type == 'taxi') color = Colors.yellow;
+        else if (type == 'bus') color = Colors.blue;
+        else if (type == 'hotel') color = Colors.green;
+        else if (type == 'pharmacy') color = Colors.pink;
+        else if (type == 'hospital') color = Colors.red;
+        else if (type == 'tourism') color = Colors.orange;
 
         _addMarker(
-          loc['id'],
-          LatLng(loc['latitude'], loc['longitude']),
+          loc['id'] ?? UniqueKey().toString(),
+          LatLng(loc['latitude'] as double, loc['longitude'] as double),
           loc['name'] ?? type.toUpperCase(),
-          hue
+          color
         );
       }
       notifyListeners();
@@ -75,7 +85,6 @@ class LocationProvider with ChangeNotifier {
       'latitude': lat,
       'longitude': lng,
     });
-    // Also save to global 'locations' for the main map
     await _service.saveStaticLocation('locations', name, {
       'type': type,
       'name': name,

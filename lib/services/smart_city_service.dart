@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/smart_city_models.dart';
@@ -24,34 +25,43 @@ class SmartCityService {
   }
 
   Future<void> bookBusTicket(BusTerminalTicket ticket) async {
-    await _db.collection('tickets').add({
-      'passengerName': ticket.passengerName,
-      'userId': _auth.currentUser?.uid,
-      'route': ticket.route,
-      'busId': ticket.busId,
-      'seatNumber': ticket.seatNumber,
-      'fare': ticket.fare,
-      'paymentStatus': 'paid',
-      'travelDate': ticket.travelDate,
-      'verificationCode': ticket.verificationCode,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await _db.collection('tickets').add({
+        'passengerName': ticket.passengerName,
+        'userId': _auth.currentUser?.uid,
+        'route': ticket.route,
+        'busId': ticket.busId,
+        'seatNumber': ticket.seatNumber,
+        'fare': ticket.fare,
+        'paymentStatus': 'paid',
+        'travelDate': ticket.travelDate,
+        'verificationCode': ticket.verificationCode,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
-    // Update bus occupancy
-    await _db.collection('buses').doc(ticket.busId).update({
-      'occupiedSeats': FieldValue.arrayUnion([ticket.seatNumber])
-    });
+      // Update bus occupancy
+      await _db.collection('buses').doc(ticket.busId).update({
+        'occupiedSeats': FieldValue.arrayUnion([ticket.seatNumber])
+      });
+    } catch (e) {
+      debugPrint("Error booking bus ticket: $e");
+      rethrow;
+    }
   }
 
   // EMERGENCY SERVICES
   Future<void> requestEmergency(String type, GeoPoint location) async {
-    await _db.collection('emergency_requests').add({
-      'userId': _auth.currentUser?.uid,
-      'type': type,
-      'location': location,
-      'status': 'pending',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    try {
+      await _db.collection('emergency_requests').add({
+        'userId': _auth.currentUser?.uid,
+        'type': type,
+        'location': location,
+        'status': 'pending',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint("Error requesting emergency: $e");
+    }
   }
 
   // TAXI QUEUE

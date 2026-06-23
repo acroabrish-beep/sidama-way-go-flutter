@@ -44,10 +44,15 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Driver Registered Successfully')));
       _formKey.currentState!.reset();
+      _nameController.clear();
+      _phoneController.clear();
+      _licenseController.clear();
+      _plateController.clear();
+      _routeController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -98,7 +103,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _submit,
-                        child: _isLoading ? const CircularProgressIndicator() : const Text('REGISTER DRIVER'),
+                        child: _isLoading ? const CircularProgressIndicator() : const Text('SAVE DRIVER'),
                       ),
                     ),
                   ],
@@ -109,22 +114,26 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
           const Divider(),
           const Padding(
             padding: EdgeInsets.all(8.0),
-            child: Text('Recently Registered', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Text('Active Drivers', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('drivers').orderBy('createdAt', descending: true).snapshots(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                 final docs = snapshot.data!.docs;
+                if (docs.isEmpty) return const Center(child: Text('No drivers yet.'));
+
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     return ListTile(
-                      title: Text(data['fullName']),
+                      leading: const CircleAvatar(child: Icon(Icons.person)),
+                      title: Text(data['fullName'] ?? 'N/A'),
                       subtitle: Text('Phone: ${data['phone']} | Plate: ${data['vehiclePlate']}'),
-                      trailing: const Icon(Icons.person, color: Colors.blue),
+                      trailing: const Icon(Icons.check_circle, color: Colors.green),
                     );
                   },
                 );

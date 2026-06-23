@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart' as custom_auth;
 
 class EcoShineScreen extends StatelessWidget {
   const EcoShineScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final stations = [
-      {'name': 'Piazza Station', 'queue': 2, 'capacity': 0.4},
-      {'name': 'Hawassa University Station', 'queue': 0, 'capacity': 0.1},
-      {'name': 'Haile Resort Station', 'queue': 4, 'capacity': 0.7},
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Eco-Shine Stations', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -31,61 +28,77 @@ class EcoShineScreen extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: stations.length,
-              itemBuilder: (context, i) {
-                final s = stations[i];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('eco_shine_locations').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+
+                final stations = snapshot.data?.docs ?? [];
+                if (stations.isEmpty) return const Center(child: Text('No Eco-Shine stations available yet.'));
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: stations.length,
+                  itemBuilder: (context, i) {
+                    final s = stations[i].data() as Map<String, dynamic>;
+                    final name = s['name'] ?? 'Station';
+                    final status = s['status'] ?? 'Open';
+                    // We'll calculate a dummy capacity for UI based on status
+                    final capacity = status == 'Open' ? 0.3 : 1.0;
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(s['name'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(20)),
-                              child: Text('Queue: ${s['queue']}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00695C))),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: Colors.teal.shade50, borderRadius: BorderRadius.circular(20)),
+                                  child: Text('Status: $status', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF00695C))),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Text('Estimated Wait Time', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 4),
+                            LinearProgressIndicator(
+                              value: capacity,
+                              backgroundColor: Colors.grey.shade200,
+                              color: capacity > 0.6 ? Colors.orange : Colors.teal,
+                            ),
+                            const SizedBox(height: 16),
+                            const Row(
+                              children: [
+                                _Badge(Icons.wb_sunny, 'Solar'),
+                                _Badge(Icons.recycling, 'Water Recycle'),
+                                _Badge(Icons.usb, 'USB'),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Prices from 50 ETB', style: TextStyle(fontWeight: FontWeight.bold)),
+                                ElevatedButton(
+                                  onPressed: status == 'Open' ? () => _bookSlot(context, stations[i].id, name) : null,
+                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00695C), foregroundColor: Colors.white),
+                                  child: const Text('Book Slot'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        const Text('Capacity', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                        const SizedBox(height: 4),
-                        LinearProgressIndicator(
-                          value: s['capacity'] as double,
-                          backgroundColor: Colors.grey.shade200,
-                          color: (s['capacity'] as double) > 0.6 ? Colors.orange : Colors.teal,
-                        ),
-                        const SizedBox(height: 16),
-                        const Row(
-                          children: [
-                            _Badge(Icons.wb_sunny, 'Solar'),
-                            _Badge(Icons.recycling, 'Water Recycle'),
-                            _Badge(Icons.usb, 'USB'),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Prices from 50 ETB', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ElevatedButton(
-                              onPressed: () => _bookSlot(context),
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00695C), foregroundColor: Colors.white),
-                              child: const Text('Book Slot'),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -95,7 +108,7 @@ class EcoShineScreen extends StatelessWidget {
     );
   }
 
-  void _bookSlot(BuildContext context) async {
+  void _bookSlot(BuildContext context, String stationId, String name) async {
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -103,9 +116,27 @@ class EcoShineScreen extends StatelessWidget {
       lastDate: DateTime.now().add(const Duration(days: 7)),
     );
     if (date != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Slot booked for ${date.day}/${date.month}/${date.year}!'), backgroundColor: const Color(0xFF00695C)),
-      );
+      try {
+        final user = Provider.of<custom_auth.AuthProvider>(context, listen: false).userModel;
+        await FirebaseFirestore.instance.collection('eco_shine_bookings').add({
+          'stationId': stationId,
+          'stationName': name,
+          'userId': user?.uid,
+          'userName': user?.fullName,
+          'appointmentDate': Timestamp.fromDate(date),
+          'status': 'Booked',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Slot booked for ${date.day}/${date.month}/${date.year}!'), backgroundColor: const Color(0xFF00695C)),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booking error: $e')));
+        }
+      }
     }
   }
 }

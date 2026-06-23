@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../providers/language_provider.dart';
+import '../providers/auth_provider.dart' as custom_auth;
+import '../models/user_model.dart';
 import 'terminal_screen.dart';
+import 'smart_city_map_screen.dart';
+import 'profile_screen.dart';
 import 'city_taxi_screen.dart';
-import 'queue_screen.dart';
 import 'emergency_screen.dart';
-import 'admin_dashboard_screen.dart';
-import 'map_screen.dart';
 import 'tourist_screen.dart';
 import 'healthcare_screen.dart';
 import 'pharmacy_screen.dart';
 import 'food_screen.dart';
 import 'wallet_screen.dart';
-import 'profile_screen.dart';
-import 'smart_city_map_screen.dart';
-import 'admin_location_dashboard.dart';
-import '../providers/location_provider.dart';
+import 'settings_screen.dart';
+import 'eco_shine_screen.dart';
+import 'ai_assistant_screen.dart';
+import '../utils/language_provider.dart';
+
+import 'digital_id_screen.dart';
+import 'citizen_reporting_screen.dart';
+import 'hotel_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,15 +33,18 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const _MainHub(),
-    const TerminalScreen(),
-    const SmartCityMapScreen(),
-    const ProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
+
+    final List<Widget> _pages = [
+      const _MainHub(),
+      const TerminalScreen(),
+      const FoodScreen(),
+      const TouristScreen(),
+      const ProfileScreen(),
+    ];
+
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -44,17 +53,18 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: const Color(0xFF2E7D32),
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Terminal'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'City Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: lang.t('home')),
+          BottomNavigationBarItem(icon: const Icon(Icons.directions_bus), label: lang.t('bus')),
+          BottomNavigationBarItem(icon: const Icon(Icons.restaurant), label: lang.t('food')),
+          BottomNavigationBarItem(icon: const Icon(Icons.map), label: lang.t('tourist')),
+          BottomNavigationBarItem(icon: const Icon(Icons.person), label: lang.t('profile')),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EmergencyScreen())),
         backgroundColor: Colors.red,
-        tooltip: 'Emergency',
+        tooltip: lang.t('emergency'),
         child: const Icon(Icons.emergency, color: Colors.white),
       ),
     );
@@ -66,55 +76,66 @@ class _MainHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final authProvider = Provider.of<custom_auth.AuthProvider>(context);
+    final user = authProvider.userModel;
     final lang = Provider.of<LanguageProvider>(context);
 
     final List<Map<String, dynamic>> services = [
-      {'title': 'City Map', 'icon': Icons.map, 'color': 0xFF1976D2, 'screen': const SmartCityMapScreen()},
-      {'title': 'Bus Terminal', 'icon': Icons.directions_bus_filled, 'color': 0xFF1565C0, 'screen': const TerminalScreen()},
-      {'title': 'City Taxi', 'icon': Icons.local_taxi, 'color': 0xFFE65100, 'screen': const CityTaxiScreen()},
-      {'title': 'Taxi Queue', 'icon': Icons.queue, 'color': 0xFF6A1B9A, 'screen': const QueueScreen()},
-      {'title': 'Emergency', 'icon': Icons.emergency, 'color': 0xFFC62828, 'screen': const EmergencyScreen()},
-      {'title': 'Tourist Guide', 'icon': Icons.map, 'color': 0xFF00897B, 'screen': const TouristScreen()},
-      {'title': 'Healthcare', 'icon': Icons.local_hospital, 'color': 0xFFD32F2F, 'screen': const HealthcareScreen()},
-      {'title': 'Pharmacy', 'icon': Icons.local_pharmacy, 'color': 0xFF388E3C, 'screen': const PharmacyScreen()},
-      {'title': 'Food Delivery', 'icon': Icons.restaurant, 'color': 0xFFF57C00, 'screen': const FoodScreen()},
-      {'title': 'Wallet', 'icon': Icons.account_balance_wallet, 'color': 0xFF4527A0, 'screen': const WalletScreen()},
-      {'title': 'Admin', 'icon': Icons.admin_panel_settings, 'color': 0xFF37474F, 'screen': const AdminDashboardScreen()},
-      {'title': 'Live Activity', 'icon': Icons.insights, 'color': 0xFF212121, 'screen': const AdminLocationDashboard()},
+      {'title': lang.t('city_map'), 'icon': Icons.map, 'color': 0xFF1976D2, 'screen': const SmartCityMapScreen()},
+      {'title': lang.t('bus_terminal'), 'icon': Icons.directions_bus_filled, 'color': 0xFF1565C0, 'screen': const TerminalScreen()},
+      {'title': lang.t('city_taxi'), 'icon': Icons.local_taxi, 'color': 0xFFE65100, 'screen': const CityTaxiScreen()},
+      {'title': lang.t('emergency'), 'icon': Icons.emergency, 'color': 0xFFC62828, 'screen': const EmergencyScreen()},
+      {'title': lang.t('tourist_guide'), 'icon': Icons.map, 'color': 0xFF00897B, 'screen': const TouristScreen()},
+      {'title': 'Hotels', 'icon': Icons.hotel, 'color': 0xFF6A1B9A, 'screen': const HotelScreen()},
+      {'title': lang.t('healthcare'), 'icon': Icons.local_hospital, 'color': 0xFFD32F2F, 'screen': const HealthcareScreen()},
+      {'title': lang.t('pharmacy'), 'icon': Icons.local_pharmacy, 'color': 0xFF388E3C, 'screen': const PharmacyScreen()},
+      {'title': lang.t('food'), 'icon': Icons.restaurant, 'color': 0xFFF57C00, 'screen': const FoodScreen()},
+      {'title': lang.t('eco_shine'), 'icon': Icons.eco, 'color': 0xFF00695C, 'screen': const EcoShineScreen()},
+      {'title': lang.t('wallet'), 'icon': Icons.account_balance_wallet, 'color': 0xFF4527A0, 'screen': const WalletScreen()},
+      {'title': 'Digital ID', 'icon': Icons.qr_code, 'color': 0xFF2E7D32, 'screen': const DigitalIDScreen()},
+      {'title': 'City Report', 'icon': Icons.report_problem, 'color': 0xFFD84315, 'screen': const CitizenReportingScreen()},
+      {'title': lang.t('settings'), 'icon': Icons.settings, 'color': 0xFF455A64, 'screen': const SettingsScreen()},
+      {'title': lang.t('ai_assistant'), 'icon': Icons.smart_toy, 'color': 0xFF6A1B9A, 'screen': const AiAssistantScreen()},
     ];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        title: Text(lang.t('platform_name'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        backgroundColor: const Color(0xFF2E7D32),
+        foregroundColor: Colors.white,
+        actions: [
+          _buildNotificationIcon(context),
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen())),
+          ),
+        ],
+      ),
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
-            expandedHeight: 180,
-            pinned: true,
-            backgroundColor: const Color(0xFF2E7D32),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          SliverToBoxAdapter(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${lang.t('hello')}, ${user?.fullName ?? 'Citizen'}! 👋',
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                ),
-                padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hello, ${user?.email?.split('@')[0] ?? 'Citizen'}! 👋',
-                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const Text(
-                      'Hawassa Smart City Mobility',
-                      style: TextStyle(color: Colors.white70, fontSize: 16),
-                    ),
-                  ],
-                ),
+                  Text(
+                    lang.t('where_to_go'),
+                    style: const TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                ],
               ),
             ),
           ),
@@ -124,7 +145,9 @@ class _MainHub extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('City Services', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  _buildCitizenAnnouncementBanner(),
+                  const SizedBox(height: 24),
+                  Text(lang.t('services'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 16),
                   GridView.builder(
                     shrinkWrap: true,
@@ -162,17 +185,23 @@ class _MainHub extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 24),
-                  const Text('Announcements', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(lang.t('announcements'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  _announcementCard(
-                    'Bus Service Update',
-                    'New routes added to the New Terminal for Bahir Dar and Jimma.',
-                    Colors.blue,
-                  ),
-                  _announcementCard(
-                    'Health Notice',
-                    'Vaccination drive starting Monday at Hawassa Referral Hospital.',
-                    Colors.red,
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('announcements').orderBy('timestamp', descending: true).limit(5).snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox();
+                      return Column(
+                        children: snapshot.data!.docs.map((doc) {
+                          final d = doc.data() as Map<String, dynamic>;
+                          return _announcementCard(
+                            d['title'] ?? 'City Update',
+                            d['message'] ?? '',
+                            _getCategoryColor(d['category']),
+                          );
+                        }).toList(),
+                      );
+                    }
                   ),
                 ],
               ),
@@ -181,6 +210,110 @@ class _MainHub extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _buildCitizenAnnouncementBanner() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('announcements')
+          .where('isActive', isEqualTo: true)
+          .orderBy('timestamp', descending: true)
+          .limit(3).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return const SizedBox.shrink();
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const Center(child: Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text('No city announcements at the moment.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          ));
+        }
+        final docs = snapshot.data!.docs;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('CITY ANNOUNCEMENTS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: PageView.builder(
+                itemCount: docs.length,
+                itemBuilder: (context, i) {
+                  final d = docs[i].data() as Map<String, dynamic>;
+                  final color = _getCategoryColor(d['category']);
+                  return Card(
+                    color: color.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: color.withOpacity(0.3))),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.campaign, color: color),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(d['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text(d['message'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildNotificationIcon(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('user_notifications')
+          .where('userId', isEqualTo: user.uid)
+          .where('isRead', isEqualTo: false)
+          .snapshots(),
+      builder: (context, snapshot) {
+        int unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+        return Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_none),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)),
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  child: Text('$unreadCount', style: const TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
+                ),
+              )
+          ],
+        );
+      },
+    );
+  }
+
+  Color _getCategoryColor(String? cat) {
+    switch (cat) {
+      case 'Emergency': return Colors.red;
+      case 'Traffic': return Colors.orange;
+      case 'Tourism': return Colors.green;
+      default: return Colors.blue;
+    }
   }
 
   Widget _announcementCard(String title, String desc, Color color) {

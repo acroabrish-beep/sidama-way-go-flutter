@@ -52,4 +52,16 @@ class SmartNotificationService {
       'status': 'active',
     });
   }
+
+  static Future<void> scheduleReminder(String title, String body, DateTime time) async {
+    // In a production app, this would use FCM tokens or local notifications.
+    // For now, we save it to a 'reminders' collection which a Cloud Function can pick up.
+    await FirebaseFirestore.instance.collection('reminders').add({
+      'userId': FirebaseAuth.instance.currentUser?.uid,
+      'title': title,
+      'body': body,
+      'scheduledTime': time,
+      'sent': false,
+    });
+  }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/smart_services.dart';
 
 enum RideState { idle, searching, driverFound, tracking, completed }
@@ -82,11 +83,9 @@ class _BookRideScreenState extends State<BookRideScreen> {
           onChanged: (v) => setState(() => _selectedDest = v),
         ),
         const SizedBox(height: 32),
-        const Text('SUGGESTED FOR YOU', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        const Text('AVAILABLE TAXI STATIONS', style: TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 12),
-        _suggestItem('Hawassa Lake', '10 mins away'),
-        _suggestItem('Piazza', '15 mins away'),
-        _suggestItem('Industrial Park', '25 mins away'),
+        _buildStationsStream(),
         const SizedBox(height: 40),
         SizedBox(
           width: double.infinity,
@@ -102,6 +101,30 @@ class _BookRideScreenState extends State<BookRideScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStationsStream() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('stations').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) return const Text('No stations available.');
+
+        return Column(
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final name = data['name'] ?? 'Station';
+            return ListTile(
+              leading: const Icon(Icons.local_taxi, color: Colors.orange),
+              title: Text(name),
+              subtitle: Text(data['location'] ?? 'Hawassa'),
+              onTap: () => setState(() => _selectedDest = name),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 

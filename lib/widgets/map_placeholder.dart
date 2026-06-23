@@ -1,11 +1,10 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 // Hawassa Map Placeholder for Web/Offline support with Live Simulation
 class HawassaMapPlaceholder extends StatelessWidget {
   final LatLng? userLocation;
-  final Set<Marker> markers;
+  final List<dynamic> markers; // Using dynamic to avoid conflicts with different Marker types
   final LatLng? destination;
 
   const HawassaMapPlaceholder({
@@ -48,27 +47,12 @@ class HawassaMapPlaceholder extends StatelessWidget {
 
           // Live Moving Vehicles & Landmarks
           ...markers.map((m) {
-             IconData icon = Icons.location_on;
-             Color color = Colors.green;
-
-             // Dynamic styling based on Marker Info (Vehicle types)
-             final title = m.infoWindow.title?.toLowerCase() ?? "";
-             if (title.contains('minibus')) {
-               icon = Icons.directions_bus;
-               color = Colors.blue;
-             } else if (title.contains('bajaj')) {
-               icon = Icons.electric_rickshaw;
-               color = Colors.orange;
-             } else if (title.contains('motor')) {
-               icon = Icons.motorcycle;
-               color = Colors.red;
-             }
-
+             // Basic heuristic for marker visualization in placeholder
              return _PositionedMarker(
-                location: m.position,
-                color: color,
-                icon: icon,
-                label: m.infoWindow.title ?? '',
+                location: m.point, // Assuming flutter_map Marker
+                color: Colors.orange,
+                icon: Icons.location_on,
+                label: 'Entity',
               );
           }),
 
@@ -180,29 +164,12 @@ class RoutePainter extends CustomPainter {
     double x2 = (end.longitude - 38.45) * 5000 + 100;
     double y2 = (7.10 - end.latitude) * 5000 + 100;
 
-    final path = Path();
-    // Centering the line relative to the icons (approx 15px offset)
     double sx = x1 % (size.width - 40) + 15;
     double sy = y1 % (size.height - 200) + 15;
     double ex = x2 % (size.width - 40) + 15;
     double ey = y2 % (size.height - 200) + 15;
 
-    path.moveTo(sx, sy);
-    path.lineTo(ex, ey);
-
-    // Draw dashed route line
-    double dashWidth = 10.0;
-    double dashSpace = 5.0;
-    double distance = 0.0;
-    for (PathMetric measurePath in path.computeMetrics()) {
-      while (distance < measurePath.length) {
-        canvas.drawPath(
-          measurePath.extractPath(distance, distance + dashWidth),
-          paint,
-        );
-        distance += dashWidth + dashSpace;
-      }
-    }
+    canvas.drawLine(Offset(sx, sy), Offset(ex, ey), paint);
   }
 
   @override

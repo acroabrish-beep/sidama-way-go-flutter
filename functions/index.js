@@ -47,7 +47,7 @@ exports.onEmergencyAlert = functions.firestore
 
         const payload = {
             notification: {
-                title: '🚨 EMERGENCY ALERT',
+                title: 'SIDAMA WAY GO - 🚨 EMERGENCY ALERT',
                 body: `Incident at ${alert.locationName}. Immediate response required.`,
                 clickAction: 'FLUTTER_NOTIFICATION_CLICK',
             },

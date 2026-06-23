@@ -1,20 +1,21 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class TrackingProvider with ChangeNotifier {
   LatLng? _currentPosition = const LatLng(7.0504, 38.4955); // Hawassa Default
-  final Set<Marker> _markers = {};
-  final Set<Polyline> _polylines = {};
+  final List<Marker> _markers = [];
+  final List<Polyline> _polylines = [];
   bool _isTracking = false;
   Timer? _simulationTimer;
 
   LatLng? _navigationDestination;
 
   LatLng? get currentPosition => _currentPosition;
-  Set<Marker> get markers => _markers;
-  Set<Polyline> get polylines => _polylines;
+  List<Marker> get markers => _markers;
+  List<Polyline> get polylines => _polylines;
   bool get isTracking => _isTracking;
   LatLng? get navigationDestination => _navigationDestination;
 
@@ -37,43 +38,45 @@ class TrackingProvider with ChangeNotifier {
         'type': 'Minibus',
         'pos': const LatLng(7.052, 38.485),
         'speed': 0.0001,
-        'color': BitmapDescriptor.hueBlue,
-        'path': [const LatLng(7.052, 38.485), const LatLng(7.060, 38.490), const LatLng(7.070, 38.495)]
+        'color': Colors.blue,
       },
       {
         'id': 'bajaj_1',
         'type': 'Bajaj',
         'pos': const LatLng(7.060, 38.472),
         'speed': 0.00015,
-        'color': BitmapDescriptor.hueYellow,
-        'path': [const LatLng(7.060, 38.472), const LatLng(7.055, 38.475), const LatLng(7.050, 38.480)]
+        'color': Colors.orange,
       },
       {
         'id': 'motor_1',
         'type': 'Motorbike',
         'pos': const LatLng(7.045, 38.498),
         'speed': 0.0002,
-        'color': BitmapDescriptor.hueOrange,
-        'path': [const LatLng(7.045, 38.498), const LatLng(7.040, 38.490), const LatLng(7.035, 38.485)]
+        'color': Colors.red,
       },
     ];
 
     _simulationTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       final random = Random();
+      _markers.clear();
+      _updateUserMarker();
+
       for (var vehicle in simulatedVehicles) {
         LatLng oldPos = vehicle['pos'];
-        // Random slight movement to simulate driving within Hawassa
         double newLat = oldPos.latitude + (random.nextDouble() - 0.5) * vehicle['speed'];
         double newLng = oldPos.longitude + (random.nextDouble() - 0.5) * vehicle['speed'];
         vehicle['pos'] = LatLng(newLat, newLng);
 
-        _markers.removeWhere((m) => m.markerId.value == vehicle['id']);
         _markers.add(
           Marker(
-            markerId: MarkerId(vehicle['id']),
-            position: vehicle['pos'],
-            icon: BitmapDescriptor.defaultMarkerWithHue(vehicle['color']),
-            infoWindow: InfoWindow(title: vehicle['type'], snippet: 'Status: On Route'),
+            point: vehicle['pos'],
+            width: 40,
+            height: 40,
+            child: Icon(
+              vehicle['type'] == 'Minibus' ? Icons.directions_bus : Icons.local_taxi,
+              color: vehicle['color'],
+              size: 30,
+            ),
           ),
         );
       }
@@ -86,11 +89,9 @@ class TrackingProvider with ChangeNotifier {
     _polylines.clear();
     _polylines.add(
       Polyline(
-        polylineId: const PolylineId('route'),
         points: [_currentPosition!, dest],
         color: Colors.blue,
-        width: 5,
-        patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+        strokeWidth: 4,
       ),
     );
     notifyListeners();
@@ -104,13 +105,12 @@ class TrackingProvider with ChangeNotifier {
 
   void _updateUserMarker() {
     if (_currentPosition != null) {
-      _markers.removeWhere((m) => m.markerId.value == 'user');
       _markers.add(
         Marker(
-          markerId: const MarkerId('user'),
-          position: _currentPosition!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow: const InfoWindow(title: 'You are here'),
+          point: _currentPosition!,
+          width: 40,
+          height: 40,
+          child: const Icon(Icons.person_pin_circle, color: Colors.green, size: 40),
         ),
       );
     }

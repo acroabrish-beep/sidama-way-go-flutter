@@ -1,232 +1,216 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
+
   @override
   State<MapScreen> createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
-  GoogleMapController? _mapController;
-  Position? _currentPosition;
-  StreamSubscription<Position>? _locationStream;
-  bool _isTracking = false;
+  final MapController _mapController = MapController();
+  LatLng _userLocation = const LatLng(7.0504, 38.4955); // Default Hawassa
   bool _isLoading = true;
-  String _statusMsg = 'Getting your location...';
 
-  static const LatLng _hawassa = LatLng(7.0504, 38.4955);
-  final Set<Marker> _markers = {};
-  LatLng _center = _hawassa;
+  final Set<String> _selectedFilters = {"Me", "Taxi", "Bus", "Hotel", "Pharmacy", "Hospital", "Eco-Shine"};
+
+  // Mock Data
+  final Map<String, List<Map<String, dynamic>>> _categoryMarkers = {
+    "Taxi": [
+      {"name": "Taxi 01", "point": LatLng(7.060, 38.505), "icon": Icons.local_taxi, "color": Colors.orange},
+      {"name": "Taxi 02", "point": LatLng(7.040, 38.515), "icon": Icons.local_taxi, "color": Colors.orange},
+      {"name": "Taxi 03", "point": LatLng(7.070, 38.485), "icon": Icons.local_taxi, "color": Colors.orange},
+    ],
+    "Bus": [
+      {"name": "Blue Bus A", "point": LatLng(7.055, 38.500), "icon": Icons.directions_bus, "color": Colors.blue},
+      {"name": "Blue Bus B", "point": LatLng(7.045, 38.490), "icon": Icons.directions_bus, "color": Colors.blue},
+    ],
+    "Hotel": [
+      {"name": "Haile Resort", "point": LatLng(7.065, 38.510), "icon": Icons.hotel, "color": Colors.purple},
+      {"name": "Lewi Hotel", "point": LatLng(7.035, 38.480), "icon": Icons.hotel, "color": Colors.purple},
+    ],
+    "Pharmacy": [
+      {"name": "City Pharmacy", "point": LatLng(7.058, 38.487), "icon": Icons.local_pharmacy, "color": Colors.red},
+      {"name": "Lake Pharmacy", "point": LatLng(7.042, 38.503), "icon": Icons.local_pharmacy, "color": Colors.red},
+    ],
+    "Hospital": [
+      {"name": "Hawassa Referral", "point": LatLng(7.062, 38.483), "icon": Icons.local_hospital, "color": Colors.red},
+    ],
+    "Eco-Shine": [
+      {"name": "Eco-Shine Piazza", "point": LatLng(7.052, 38.497), "icon": Icons.wb_sunny, "color": Colors.green},
+      {"name": "Eco-Shine University", "point": LatLng(7.070, 38.490), "icon": Icons.eco, "color": Colors.green},
+    ],
+  };
 
   @override
   void initState() {
     super.initState();
-    _initLocation();
+    _determinePosition();
   }
 
-  @override
-  void dispose() {
-    _locationStream?.cancel();
-    _mapController?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _initLocation() async {
-    setState(() { _isLoading = true; _statusMsg = 'Requesting permission...'; });
-
+  Future<void> _determinePosition() async {
+    setState(() => _isLoading = true);
     final permission = await Permission.location.request();
-    if (!permission.isGranted) {
-      setState(() { _isLoading = false; _statusMsg = 'Location permission denied'; });
-      return;
+    if (permission.isGranted) {
+      try {
+        Position position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
+        setState(() {
+          _userLocation = LatLng(position.latitude, position.longitude);
+          _isLoading = false;
+        });
+        _mapController.move(_userLocation, 14);
+      } catch (e) {
+        setState(() => _isLoading = false);
+      }
+    } else {
+      setState(() => _isLoading = false);
     }
+  }
 
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('GPS Disabled'),
-            content: const Text('Please enable location services to use tracking.'),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-              TextButton(
-                onPressed: () { Navigator.pop(context); Geolocator.openLocationSettings(); },
-                child: const Text('Enable GPS'),
+  void _showMarkerInfo(String name) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          height: 150,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.navigation),
+                label: const Text("Navigate"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E7D32),
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 45),
+                ),
               ),
             ],
           ),
         );
-      }
-      setState(() { _isLoading = false; _statusMsg = 'GPS disabled — using Hawassa default'; });
-      return;
-    }
-
-    setState(() { _statusMsg = 'Getting GPS position...'; });
-    try {
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      _updatePosition(pos);
-    } catch (e) {
-      setState(() { _isLoading = false; _statusMsg = 'Location error — using Hawassa default'; });
-    }
-  }
-
-  void _updatePosition(Position pos) {
-    final latlng = LatLng(pos.latitude, pos.longitude);
-    setState(() {
-      _currentPosition = pos;
-      _center = latlng;
-      _isLoading = false;
-      _statusMsg = 'Location found';
-      _markers.clear();
-      _markers.add(Marker(
-        markerId: const MarkerId('my_location'),
-        position: latlng,
-        infoWindow: const InfoWindow(title: 'My Current Location'),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      ));
-    });
-    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latlng, 15));
-  }
-
-  Future<void> _saveToFirestore(Position pos) async {
-    try {
-      final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
-      await FirebaseFirestore.instance.collection('users_locations').add({
-        'userId': userId,
-        'latitude': pos.latitude,
-        'longitude': pos.longitude,
-        'accuracy': pos.accuracy,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      debugPrint('Firestore save error: $e');
-    }
-  }
-
-  void _startTracking() {
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    );
-    _locationStream = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-      (pos) {
-        _updatePosition(pos);
-        _saveToFirestore(pos);
-        setState(() { _statusMsg = 'Live tracking active'; });
       },
-      onError: (e) => setState(() { _statusMsg = 'Tracking error: $e'; }),
     );
-    setState(() { _isTracking = true; });
-  }
-
-  void _stopTracking() {
-    _locationStream?.cancel();
-    setState(() { _isTracking = false; _statusMsg = 'Tracking stopped'; });
   }
 
   @override
   Widget build(BuildContext context) {
+    List<Marker> markers = [];
+
+    if (_selectedFilters.contains("Me")) {
+      markers.add(
+        Marker(
+          point: _userLocation,
+          width: 40,
+          height: 40,
+          child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40),
+        ),
+      );
+    }
+
+    _categoryMarkers.forEach((category, list) {
+      if (_selectedFilters.contains(category)) {
+        for (var m in list) {
+          markers.add(
+            Marker(
+              point: m['point'],
+              width: 40,
+              height: 40,
+              child: GestureDetector(
+                onTap: () => _showMarkerInfo(m['name']),
+                child: Icon(m['icon'], color: m['color'], size: 30),
+              ),
+            ),
+          );
+        }
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
+        title: const Text("City Map"),
         backgroundColor: const Color(0xFF2E7D32),
-        title: const Text('Live GPS Tracking', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        foregroundColor: Colors.white,
       ),
       body: Stack(
         children: [
-          GoogleMap(
-            onMapCreated: (c) => _mapController = c,
-            initialCameraPosition: CameraPosition(target: _center, zoom: 14),
-            markers: _markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            zoomControlsEnabled: true,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _userLocation,
+              initialZoom: 14,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.sidama.sidama_way_go',
+              ),
+              MarkerLayer(markers: markers),
+            ],
           ),
+
+          // Category Filter Chips
+          Positioned(
+            top: 10,
+            left: 0,
+            right: 0,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: _selectedFilters.union(_categoryMarkers.keys.toSet()).map((category) {
+                  final isSelected = _selectedFilters.contains(category);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(category),
+                      selected: isSelected,
+                      onSelected: (bool selected) {
+                        setState(() {
+                          if (selected) {
+                            _selectedFilters.add(category);
+                          } else {
+                            _selectedFilters.remove(category);
+                          }
+                        });
+                      },
+                      selectedColor: const Color(0xFF2E7D32).withOpacity(0.3),
+                      checkmarkColor: const Color(0xFF2E7D32),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+
           if (_isLoading)
-            Container(
-              color: Colors.black26,
-              child: const Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(color: Color(0xFF2E7D32)),
-                        SizedBox(height: 16),
-                        Text('Getting location...'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+
+          // Coordinates at bottom
           Positioned(
-            top: 12,
-            left: 12,
-            right: 12,
+            bottom: 20,
+            left: 20,
+            right: 20,
             child: Card(
+              color: Colors.white.withOpacity(0.9),
               child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Icon(_isTracking ? Icons.location_on : Icons.location_off,
-                          color: _isTracking ? Colors.green : Colors.grey, size: 18),
-                      const SizedBox(width: 6),
-                      Text(_statusMsg, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-                    ]),
-                    if (_currentPosition != null) ...[
-                      const SizedBox(height: 6),
-                      Text('Latitude: ${_currentPosition!.latitude.toStringAsFixed(6)}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text('Longitude: ${_currentPosition!.longitude.toStringAsFixed(6)}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                      Text('Accuracy: ±${_currentPosition!.accuracy.toStringAsFixed(1)} m',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                    ],
-                  ],
+                padding: const EdgeInsets.all(10.0),
+                child: Text(
+                  "Lat: ${_userLocation.latitude.toStringAsFixed(4)}, Lng: ${_userLocation.longitude.toStringAsFixed(4)}",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            bottom: 24,
-            left: 16,
-            right: 16,
-            child: _isTracking
-                ? ElevatedButton.icon(
-                    onPressed: _stopTracking,
-                    icon: const Icon(Icons.stop_circle),
-                    label: const Text('Stop Tracking'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  )
-                : ElevatedButton.icon(
-                    onPressed: _startTracking,
-                    icon: const Icon(Icons.my_location),
-                    label: const Text('Start Live Tracking'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2E7D32),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
           ),
         ],
       ),

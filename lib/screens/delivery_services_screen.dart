@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DeliveryServicesScreen extends StatelessWidget {
   const DeliveryServicesScreen({super.key});
@@ -33,47 +34,50 @@ class _FoodTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final restaurants = [
-      {'name': 'Haile Resort Dining', 'dish': 'Fresh Tilapia', 'price': '350 ETB'},
-      {'name': 'Lewi Hotel', 'dish': 'Sidama Special Kitfo', 'price': '420 ETB'},
-      {'name': 'Piazza Burger', 'dish': 'Zemenaw Burger', 'price': '180 ETB'},
-    ];
-
     return Column(
       children: [
         const _DeliveryTrackingCard(),
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.8,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: restaurants.length,
-            itemBuilder: (context, index) {
-              final r = restaurants[index];
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(height: 100, color: Colors.green.shade100, child: const Center(child: Icon(Icons.restaurant, size: 40))),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(r['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text(r['dish']!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          const SizedBox(height: 4),
-                          Text(r['price']!, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ],
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('restaurants').snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              final docs = snapshot.data!.docs;
+              if (docs.isEmpty) return const Center(child: Text('No restaurants found.'));
+
+              return GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.8,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                 ),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final r = docs[index].data() as Map<String, dynamic>;
+                  return Card(
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(height: 100, color: Colors.green.shade100, child: const Center(child: Icon(Icons.restaurant, size: 40))),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(r['name'] ?? 'Restaurant', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(r['location'] ?? 'Hawassa', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                              const SizedBox(height: 4),
+                              const Text('Prices from 50 ETB', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 10)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -88,18 +92,37 @@ class _PharmacyTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return Column(
       children: [
-        const Text('Medicine Search', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const TextField(decoration: InputDecoration(hintText: 'Enter medicine name...', border: OutlineInputBorder())),
-        const SizedBox(height: 24),
-        ListTile(
-          leading: const Icon(Icons.local_pharmacy, color: Colors.red),
-          title: const Text('Gudumale Pharmacy'),
-          subtitle: const Text('Verified • 1.2km away'),
-          trailing: ElevatedButton(onPressed: () {}, child: const Text('Upload Prescription')),
+        const Padding(
+          padding: EdgeInsets.all(16.0),
+          child: TextField(decoration: InputDecoration(hintText: 'Enter medicine name...', border: OutlineInputBorder(), prefixIcon: Icon(Icons.search))),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('pharmacies').snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              final docs = snapshot.data!.docs;
+              if (docs.isEmpty) return const Center(child: Text('No pharmacies found.'));
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final p = docs[index].data() as Map<String, dynamic>;
+                  return Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.local_pharmacy, color: Colors.red),
+                      title: Text(p['name'] ?? 'Pharmacy'),
+                      subtitle: Text(p['location'] ?? 'Hawassa'),
+                      trailing: ElevatedButton(onPressed: () {}, child: const Text('Order')),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );

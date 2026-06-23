@@ -5,6 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
 
+import 'package:provider/provider.dart';
+import '../utils/language_provider.dart';
+
 enum TerminalStep {
   selectTerminal,
   selectRoute,
@@ -67,6 +70,28 @@ class _TerminalScreenState extends State<TerminalScreen> {
     super.dispose();
   }
 
+  Future<void> _seedRoutes() async {
+    final snapshot = await FirebaseFirestore.instance.collection('routes').limit(1).get();
+    if (snapshot.docs.isEmpty) {
+      final batch = FirebaseFirestore.instance.batch();
+      for (var r in _oldTerminalRoutes) {
+        final docRef = FirebaseFirestore.instance.collection('routes').doc();
+        batch.set(docRef, {...r, 'terminal': 'Hawassa Old Terminal'});
+      }
+      for (var r in _newTerminalRoutes) {
+        final docRef = FirebaseFirestore.instance.collection('routes').doc();
+        batch.set(docRef, {...r, 'terminal': 'Hawassa New Terminal'});
+      }
+      await batch.commit();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _seedRoutes();
+  }
+
   void _nextStep(TerminalStep step) {
     setState(() {
       _currentStep = step;
@@ -80,11 +105,9 @@ class _TerminalScreenState extends State<TerminalScreen> {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    await Future.delayed(const Duration(seconds: 2));
-
     try {
-      _ticketId = 'TK-${Random().nextInt(900000) + 100000}';
-      final userId = FirebaseAuth.instance.currentUser?.uid;
+      _ticketId = 'TK-${DateTime.now().millisecondsSinceEpoch}';
+      final user = FirebaseAuth.instance.currentUser;
 
       await FirebaseFirestore.instance.collection('bookings').add({
         'ticketId': _ticketId,
@@ -97,8 +120,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
         'fare': _selectedRoute!['fare'],
         'paymentMethod': _paymentMethod,
         'status': 'confirmed',
-        'userId': userId,
-        'timestamp': FieldValue.serverTimestamp(),
+        'userId': user?.uid ?? 'guest',
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (!mounted) return;
@@ -115,9 +138,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lang = Provider.of<LanguageProvider>(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Intercity Bus Terminal'),
+        title: Text(lang.translate('intercity_bus')),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
@@ -204,50 +228,84 @@ class _TerminalScreenState extends State<TerminalScreen> {
   }
 
   Widget _buildRouteSelection() {
-    final routes = _selectedTerminal == 'Hawassa Old Terminal' ? _oldTerminalRoutes : _newTerminalRoutes;
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: routes.length,
-      itemBuilder: (context, index) {
-        final r = routes[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            title: Text(r['route'], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Duration: ${r['duration']}'),
-            trailing: Text('${r['fare']} ETB', style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
-            onTap: () {
-              setState(() {
-                _selectedRoute = r;
-              });
-              _nextStep(TerminalStep.selectBus);
-            },
-          ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('terminal_routes')
+          .where('terminal', isEqualTo: _selectedTerminal)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+
+        final routes = snapshot.data?.docs ?? [];
+        if (routes.isEmpty) return const Center(child: Text('No routes available for this terminal.'));
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: routes.length,
+          itemBuilder: (context, index) {
+            final r = routes[index].data() as Map<String, dynamic>;
+            final routeName = r['route'] ?? 'Unknown Route';
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                title: Text(routeName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text('Duration: ${r['duration'] ?? 'N/A'}'),
+                trailing: Text('${r['fare'] ?? 0} ETB', style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+                onTap: () {
+                  setState(() {
+                    _selectedRoute = {
+                      'route': routeName,
+                      'fare': r['fare'] ?? 0,
+                    };
+                  });
+                  _nextStep(TerminalStep.selectBus);
+                },
+              ),
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildBusSelection() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _buses.length,
-      itemBuilder: (context, index) {
-        final b = _buses[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: const Icon(Icons.directions_bus, color: Color(0xFF1565C0)),
-            title: Text(b['company'], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text('Departure: ${b['departure']} | ${b['available']}/${b['seats']} Available'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              setState(() {
-                _selectedBus = b;
-              });
-              _nextStep(TerminalStep.selectSeat);
-            },
-          ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('vehicles').where('terminal', isEqualTo: _selectedTerminal).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+
+        final vehicles = snapshot.data?.docs ?? [];
+        if (vehicles.isEmpty) return const Center(child: Text('No buses available right now.'));
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: vehicles.length,
+          itemBuilder: (context, index) {
+            final b = vehicles[index].data() as Map<String, dynamic>;
+            final busId = b['plateNumber'] ?? b['id'] ?? 'BUS-${index + 1}';
+            final company = b['type'] ?? b['company'] ?? 'Transport Co.';
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: ListTile(
+                leading: const Icon(Icons.directions_bus, color: Color(0xFF1565C0)),
+                title: Text(company, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text('ID: $busId | Capacity: ${b['capacity'] ?? 40}'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  setState(() {
+                    _selectedBus = {
+                      'id': busId,
+                      'company': company,
+                      'capacity': b['capacity'] ?? 40,
+                    };
+                  });
+                  _nextStep(TerminalStep.selectSeat);
+                },
+              ),
+            );
+          },
         );
       },
     );

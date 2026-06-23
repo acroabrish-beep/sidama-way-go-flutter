@@ -54,10 +54,13 @@ class _TerminalsTab extends StatelessWidget {
           child: Text('Recent Intercity Bookings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ),
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('bookings').orderBy('timestamp', descending: true).limit(10).snapshots(),
+          stream: FirebaseFirestore.instance.collection('bookings').orderBy('createdAt', descending: true).limit(10).snapshots(),
           builder: (context, snapshot) {
+            if (snapshot.hasError) return const Text('Error loading data');
             if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
             final docs = snapshot.data!.docs;
+            if (docs.isEmpty) return const Text('No recent bookings.');
+
             return Column(
               children: docs.map((doc) {
                 final data = doc.data() as Map<String, dynamic>;
@@ -106,24 +109,27 @@ class _CityTaxiTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _simpleStat('Total Taxi Bookings', 'taxi_bookings'),
+        _simpleStat('Total Taxi Requests', 'taxi_requests'),
         _simpleStat('Drivers in Queue', 'queues', whereField: 'status', whereValue: 'waiting'),
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 16.0),
-          child: Text('Recent Taxi Bookings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          child: Text('Recent Taxi Requests', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ),
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('taxi_bookings').orderBy('timestamp', descending: true).limit(10).snapshots(),
+          stream: FirebaseFirestore.instance.collection('taxi_requests').orderBy('timestamp', descending: true).limit(10).snapshots(),
           builder: (context, snapshot) {
+            if (snapshot.hasError) return const Text('Error loading data');
             if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
             final docs = snapshot.data!.docs;
+            if (docs.isEmpty) return const Text('No recent requests.');
+
             return Column(
               children: docs.map((doc) {
                 final data = doc.data() as Map<String, dynamic>;
                 return Card(
                   child: ListTile(
                     title: Text('Destination: ${data['destination']}'),
-                    subtitle: Text('Fare: ${data['fare']} ETB | ${data['paymentMethod']}'),
+                    subtitle: Text('Fare: ${data['fare']} ETB | Status: ${data['status']}'),
                     trailing: const Icon(Icons.local_taxi, color: Colors.orange),
                   ),
                 );

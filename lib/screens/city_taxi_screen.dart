@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart' as custom_auth;
 
 class CityTaxiScreen extends StatefulWidget {
   const CityTaxiScreen({super.key});
@@ -11,32 +13,116 @@ class CityTaxiScreen extends StatefulWidget {
 }
 
 class _CityTaxiScreenState extends State<CityTaxiScreen> {
-  final List<Map<String, dynamic>> _areas = [
-    {'name': 'Menaharia', 'fare': 8},
-    {'name': 'Piassa', 'fare': 0},
-    {'name': 'Haik Dar', 'fare': 6},
-    {'name': 'Tabor', 'fare': 7},
-    {'name': 'Hawella Tula', 'fare': 10},
-    {'name': 'Addis Ketema', 'fare': 8},
-    {'name': 'Gudumale', 'fare': 9},
-    {'name': 'Misrak', 'fare': 7},
-    {'name': 'Alamura', 'fare': 12},
-    {'name': 'Hiteta', 'fare': 11},
-    {'name': 'Dato', 'fare': 15},
-  ];
+  String? _activeRequestId;
+
+  Future<void> _seedTaxiRoutes() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('taxi_routes').limit(1).get();
+      if (snapshot.docs.isEmpty) {
+        final List<Map<String, dynamic>> initialRoutes = [
+          {'from': 'Piassa', 'to': 'Menaharia', 'fare': 8, 'duration': '10 min'},
+          {'from': 'Piassa', 'to': 'Haik Dar', 'fare': 6, 'duration': '8 min'},
+          {'from': 'Piassa', 'to': 'Tabor', 'fare': 7, 'duration': '12 min'},
+          {'from': 'Piassa', 'to': 'Hawella Tula', 'fare': 10, 'duration': '15 min'},
+          {'from': 'Piassa', 'to': 'Addis Ketema', 'fare': 8, 'duration': '11 min'},
+          {'from': 'Piassa', 'to': 'Gudumale', 'fare': 9, 'duration': '13 min'},
+          {'from': 'Piassa', 'to': 'Misrak', 'fare': 7, 'duration': '10 min'},
+          {'from': 'Piassa', 'to': 'Alamura', 'fare': 12, 'duration': '18 min'},
+        ];
+        final batch = FirebaseFirestore.instance.batch();
+        for (var route in initialRoutes) {
+          final docRef = FirebaseFirestore.instance.collection('taxi_routes').doc();
+          batch.set(docRef, route);
+        }
+        await batch.commit();
+      }
+    } catch (e) {
+      debugPrint('Error seeding taxi routes: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _seedTaxiRoutes();
+  }
 
   void _showBookingSheet(Map<String, dynamic> area) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
-        return _BookingBottomSheet(area: area);
+        return _BookingBottomSheet(
+          area: area,
+          onRequested: (id) {
+            setState(() {
+              _activeRequestId = id;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildAreaGrid() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('taxi_routes').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+
+        final routes = snapshot.data?.docs ?? [];
+        if (routes.isEmpty) return const Center(child: Text('No taxi routes available.'));
+
+        return GridView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 1.5,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+          ),
+          itemCount: routes.length,
+          itemBuilder: (context, index) {
+            final r = routes[index].data() as Map<String, dynamic>;
+            final name = r['to'] ?? 'Unnamed';
+            final fare = r['fare'] ?? 10;
+            final duration = r['duration'] ?? 'N/A';
+
+            return Card(
+              elevation: 2,
+              child: InkWell(
+                onTap: () => _showBookingSheet({'name': name, 'fare': fare, 'duration': duration}),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.local_taxi, color: Color(0xFFE65100)),
+                      const SizedBox(height: 8),
+                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                      Text('$fare ETB • $duration', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_activeRequestId != null) {
+      return _ActiveRequestScreen(
+        requestId: _activeRequestId!,
+        onClose: () => setState(() => _activeRequestId = null),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hawassa City Taxi'),
@@ -67,39 +153,7 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
             child: Text('Popular Destinations', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 1.5,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: _areas.length,
-              itemBuilder: (context, index) {
-                final area = _areas[index];
-                if (area['name'] == 'Piassa') return const SizedBox.shrink();
-                return Card(
-                  elevation: 2,
-                  child: InkWell(
-                    onTap: () => _showBookingSheet(area),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.location_on, color: Color(0xFFE65100)),
-                          const SizedBox(height: 8),
-                          Text(area['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          Text('${area['fare']} ETB', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: _buildAreaGrid(),
           ),
         ],
       ),
@@ -109,7 +163,8 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
 
 class _BookingBottomSheet extends StatefulWidget {
   final Map<String, dynamic> area;
-  const _BookingBottomSheet({required this.area});
+  final Function(String) onRequested;
+  const _BookingBottomSheet({required this.area, required this.onRequested});
 
   @override
   State<_BookingBottomSheet> createState() => _BookingBottomSheetState();
@@ -188,25 +243,94 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
 
   Future<void> _bookTaxi() async {
     try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      await FirebaseFirestore.instance.collection('taxi_bookings').add({
+      final user = Provider.of<custom_auth.AuthProvider>(context, listen: false).userModel;
+      final docRef = await FirebaseFirestore.instance.collection('taxi_requests').add({
+        'pickup': 'Piassa', // Default base for now
         'destination': widget.area['name'],
         'fare': widget.area['fare'],
+        'duration': widget.area['duration'],
         'paymentMethod': _paymentMethod,
-        'userId': userId,
-        'status': 'pending',
+        'userId': user?.uid,
+        'userName': user?.fullName,
+        'status': 'Pending',
         'timestamp': FieldValue.serverTimestamp(),
       });
       if (!mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Taxi booked! Driver will arrive in 3-5 mins'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      widget.onRequested(docRef.id);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Booking error: $e')));
     }
+  }
+}
+
+class _ActiveRequestScreen extends StatelessWidget {
+  final String requestId;
+  final VoidCallback onClose;
+  const _ActiveRequestScreen({required this.requestId, required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE65100),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('taxi_requests').doc(requestId).snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.white));
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final status = data['status'] ?? 'Pending';
+
+          if (status == 'Completed') {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white, size: 80),
+                  const SizedBox(height: 24),
+                  const Text('Trip Completed!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Text('Total Fare: ${data['fare']} ETB', style: const TextStyle(color: Colors.white70, fontSize: 18)),
+                  const SizedBox(height: 40),
+                  ElevatedButton(
+                    onPressed: onClose,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.orange),
+                    child: const Text('BACK TO HOME'),
+                  )
+                ],
+              ),
+            );
+          }
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.local_taxi, color: Colors.white, size: 80),
+                  const SizedBox(height: 32),
+                  Text(
+                    status == 'Accepted' ? 'Driver is on the way!' : 'Finding a driver...',
+                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  if (status == 'Accepted') ...[
+                    Text('Driver: ${data['driverName'] ?? 'Assigned'}', style: const TextStyle(color: Colors.white70)),
+                    Text('Phone: ${data['driverPhone'] ?? 'N/A'}', style: const TextStyle(color: Colors.white70)),
+                  ],
+                  const SizedBox(height: 48),
+                  const LinearProgressIndicator(color: Colors.white, backgroundColor: Colors.white24),
+                  const SizedBox(height: 48),
+                  TextButton(
+                    onPressed: () => FirebaseFirestore.instance.collection('taxi_requests').doc(requestId).delete().then((_) => onClose()),
+                    child: const Text('CANCEL REQUEST', style: TextStyle(color: Colors.white70)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

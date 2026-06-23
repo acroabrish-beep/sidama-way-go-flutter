@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../providers/language_provider.dart';
+import '../utils/language_provider.dart';
 import 'package:provider/provider.dart';
 
 class PublicTransportScreen extends StatelessWidget {

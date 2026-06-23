@@ -1,9 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../providers/tracking_provider.dart';
-import '../widgets/map_placeholder.dart';
 
 class RealtimeMapScreen extends StatefulWidget {
   const RealtimeMapScreen({super.key});
@@ -13,7 +12,7 @@ class RealtimeMapScreen extends StatefulWidget {
 }
 
 class _RealtimeMapScreenState extends State<RealtimeMapScreen> {
-  GoogleMapController? _controller;
+  final MapController _mapController = MapController();
 
   final List<Map<String, dynamic>> _locations = [
     {'name': 'Hawassa Lake', 'lat': 7.060, 'lng': 38.470},
@@ -47,31 +46,27 @@ class _RealtimeMapScreenState extends State<RealtimeMapScreen> {
       ),
       body: Consumer<TrackingProvider>(
         builder: (context, tracking, child) {
-          bool usePlaceholder = kIsWeb; // Force placeholder on web to avoid crash
+          if (tracking.currentPosition == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
           return Stack(
             children: [
-              usePlaceholder
-                  ? HawassaMapPlaceholder(
-                      userLocation: tracking.currentPosition,
-                      markers: tracking.markers,
-                      destination: tracking.navigationDestination,
-                    )
-                  : (tracking.currentPosition == null
-                      ? const Center(child: CircularProgressIndicator())
-                      : GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: tracking.currentPosition!,
-                            zoom: 15,
-                          ),
-                          markers: tracking.markers,
-                          polylines: tracking.polylines,
-                          myLocationEnabled: true,
-                          myLocationButtonEnabled: true,
-                          onMapCreated: (GoogleMapController controller) {
-                            _controller = controller;
-                          },
-                        )),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: tracking.currentPosition!,
+                  initialZoom: 15,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.sidama.sidama_way_go',
+                  ),
+                  PolylineLayer(polylines: tracking.polylines),
+                  MarkerLayer(markers: tracking.markers),
+                ],
+              ),
 
               // Location Cards at Bottom
               Positioned(
@@ -108,12 +103,9 @@ class _RealtimeMapScreenState extends State<RealtimeMapScreen> {
                                     Expanded(
                                       child: ElevatedButton.icon(
                                         onPressed: () {
-                                          tracking.navigateTo(LatLng(loc['lat'], loc['lng']));
-                                          if (_controller != null) {
-                                            _controller!.animateCamera(
-                                              CameraUpdate.newLatLng(LatLng(loc['lat'], loc['lng'])),
-                                            );
-                                          }
+                                          final dest = LatLng(loc['lat'], loc['lng']);
+                                          tracking.navigateTo(dest);
+                                          _mapController.move(dest, 15);
                                         },
                                         icon: const Icon(Icons.navigation, size: 16),
                                         label: const Text('Navigate'),

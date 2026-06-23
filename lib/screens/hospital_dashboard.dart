@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import '../widgets/dashboard_base.dart';
+import '../widgets/glass_card.dart';
+import 'crud_list_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class HospitalDashboard extends StatelessWidget {
+  const HospitalDashboard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return DashboardBase(
+      title: 'Healthcare Admin',
+      children: [
+        _buildStats(),
+        const SizedBox(height: 24),
+        _buildActionGrid(context),
+        const SizedBox(height: 24),
+        const Text(
+          'Ambulance Dispatch',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 16),
+        _buildDispatchList(),
+        const SizedBox(height: 24),
+        const Text(
+          'Registered Doctors',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        const SizedBox(height: 16),
+        _buildDoctorList(),
+      ],
+    );
+  }
+
+  Widget _buildStats() {
+    return Row(
+      children: [
+        Expanded(child: _statCardStream('Hospitals', 'hospitals', Icons.local_hospital, Colors.redAccent)),
+        const SizedBox(width: 12),
+        Expanded(child: _statCardStream('Ambulances', 'ambulances', Icons.medical_services, Colors.blueAccent)),
+      ],
+    );
+  }
+
+  Widget _statCardStream(String label, String collection, IconData icon, Color color) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection(collection).snapshots(),
+      builder: (context, snapshot) {
+        String value = snapshot.hasData ? snapshot.data!.docs.length.toString() : '...';
+        return _buildStatCard(label, value, icon, color);
+      },
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+    return GlassCard(
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+          Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionGrid(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 3,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      children: [
+        _buildActionItem(context, 'Hospitals', Icons.local_hospital, 'hospitals', ['name', 'location', 'phone']),
+        _buildActionItem(context, 'Doctors', Icons.person, 'doctors', ['name', 'specialty', 'hospital']),
+        _buildActionItem(context, 'Appointments', Icons.calendar_month, 'appointments', ['patientName', 'hospitalName', 'status']),
+      ],
+    );
+  }
+
+  Widget _buildActionItem(BuildContext context, String title, IconData icon, String collection, List<String> fields) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => CRUDListScreen(collection: collection, title: title, fields: fields))),
+      child: GlassCard(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(height: 4),
+            Text(title, style: const TextStyle(color: Colors.white, fontSize: 10), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDispatchList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('appointments').orderBy('createdAt', descending: true).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return const Center(child: Text('Error loading appointments', style: TextStyle(color: Colors.white)));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) return const Center(child: Text('No active appointments', style: TextStyle(color: Colors.white70)));
+
+        return Column(
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final status = data['status'] ?? 'pending';
+            return GlassCard(
+              padding: const EdgeInsets.all(8),
+              child: ListTile(
+                title: Text(data['patientName']?.toString() ?? 'Patient', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: Text('Reason: ${data['reason']}\nHospital: ${data['hospitalName']}', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (status == 'pending') ...[
+                      IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => doc.reference.update({'status': 'confirmed'})),
+                      IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () => doc.reference.update({'status': 'cancelled'})),
+                    ],
+                    Text(status.toUpperCase(), style: const TextStyle(color: Colors.blueAccent, fontSize: 8, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildDoctorList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('doctors').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return const Center(child: Text('Error loading doctors'));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+        final docs = snapshot.data?.docs ?? [];
+        return Column(
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return GlassCard(
+              padding: const EdgeInsets.all(8),
+              child: ListTile(
+                title: Text(data['name']?.toString() ?? 'Dr. Smith', style: const TextStyle(color: Colors.white)),
+                subtitle: Text(data['specialty']?.toString() ?? 'General', style: const TextStyle(color: Colors.white70)),
+                trailing: CircleAvatar(
+                  backgroundColor: data['status'] == 'Available' || data['isAvailable'] == true ? Colors.green : Colors.grey,
+                  radius: 5,
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}

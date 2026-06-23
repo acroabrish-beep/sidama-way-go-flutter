@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/location_service.dart';
@@ -7,12 +8,12 @@ import '../services/location_service.dart';
 class MapProvider with ChangeNotifier {
   final LocationService _locationService = LocationService();
   LatLng? _currentLocation;
-  final Set<Marker> _markers = {};
+  final List<Marker> _markers = [];
 
   LatLng? get currentLocation => _currentLocation;
-  Set<Marker> get markers => _markers;
+  List<Marker> get markers => _markers;
 
-  void setMapController(GoogleMapController controller) {
+  void setMapController(dynamic controller) {
     // Controller can be used here if needed
   }
 
@@ -28,11 +29,6 @@ class MapProvider with ChangeNotifier {
       // Start live tracking from service
       _locationService.startLiveTracking('user');
 
-      // We can listen to all locations using the service's stream if needed
-      _locationService.getAllCityLocations().listen((locations) {
-         // Logic to update markers from city locations if needed
-      });
-
     } catch (e) {
       debugPrint("Error initializing location: $e");
     }
@@ -40,13 +36,14 @@ class MapProvider with ChangeNotifier {
 
   void _updateUserMarker() {
     if (_currentLocation != null) {
-      _markers.removeWhere((m) => m.markerId.value == 'user_location');
+      _markers.removeWhere((m) => m.key == const Key('user_location'));
       _markers.add(
         Marker(
-          markerId: const MarkerId('user_location'),
-          position: _currentLocation!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-          infoWindow: const InfoWindow(title: 'My Location'),
+          key: const Key('user_location'),
+          point: _currentLocation!,
+          width: 40,
+          height: 40,
+          child: const Icon(Icons.location_on, color: Colors.blue, size: 30),
         ),
       );
     }
@@ -59,18 +56,16 @@ class MapProvider with ChangeNotifier {
         final GeoPoint? point = data['liveLocation'];
         if (point == null) continue;
 
-        final markerId = MarkerId(doc.id);
+        final markerKey = Key(doc.id);
 
-        _markers.removeWhere((m) => m.markerId == markerId);
+        _markers.removeWhere((m) => m.key == markerKey);
         _markers.add(
           Marker(
-            markerId: markerId,
-            position: LatLng(point.latitude, point.longitude),
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-            infoWindow: InfoWindow(
-              title: data['type'] ?? 'Vehicle',
-              snippet: 'Driver: ${data['driverName'] ?? 'Unknown'}',
-            ),
+            key: markerKey,
+            point: LatLng(point.latitude, point.longitude),
+            width: 40,
+            height: 40,
+            child: const Icon(Icons.directions_car, color: Colors.green, size: 30),
           ),
         );
       }

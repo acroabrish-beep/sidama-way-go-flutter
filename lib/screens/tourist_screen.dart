@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'book_ride_screen.dart';
 
 class TouristScreen extends StatelessWidget {
@@ -6,33 +7,6 @@ class TouristScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final spots = [
-      {
-        'name': 'Hawassa Lake & Amora Gedel',
-        'image': '🌊',
-        'desc': 'Stunning lake views and wildlife.',
-        'tag': 'Nature'
-      },
-      {
-        'name': 'Fish Market',
-        'image': '🐟',
-        'desc': 'Famous fresh tilapia market by the lake.',
-        'tag': 'Culture'
-      },
-      {
-        'name': 'Tabor Mountain',
-        'image': '⛰️',
-        'desc': 'Hiking trails with panoramic city views.',
-        'tag': 'Adventure'
-      },
-      {
-        'name': 'Cultural Center',
-        'image': '🎭',
-        'desc': 'Explore Sidama heritage and architecture.',
-        'tag': 'History'
-      },
-    ];
-
     return Scaffold(
       appBar: AppBar(title: const Text('TOURISM GUIDE')),
       body: SingleChildScrollView(
@@ -44,7 +18,7 @@ class TouristScreen extends StatelessWidget {
             const SizedBox(height: 32),
             const Text('POPULAR ATTRACTIONS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 16),
-            ...spots.map((s) => _buildSpotCard(context, s)),
+            _buildAttractionsList(),
             const SizedBox(height: 32),
             const Text('TOURIST SERVICES', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 16),
@@ -59,6 +33,32 @@ class TouristScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAttractionsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('tourism_sites').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+
+        final sites = snapshot.data?.docs ?? [];
+        if (sites.isEmpty) return const Text('No attractions registered yet.', style: TextStyle(color: Colors.grey));
+
+        return Column(
+          children: sites.map((doc) {
+            final s = doc.data() as Map<String, dynamic>;
+            return _buildSpotCard(context, {
+              'name': s['name'] ?? 'Site',
+              'image': '📍',
+              'desc': s['description'] ?? 'No description.',
+              'tag': s['category'] ?? 'General',
+              'imageUrl': s['imageUrl'] ?? '',
+            });
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -93,12 +93,19 @@ class TouristScreen extends StatelessWidget {
   }
 
   Widget _buildSpotCard(BuildContext context, Map<String, String> s) {
+    final hasImage = s['imageUrl']!.isNotEmpty;
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Column(
         children: [
+          if (hasImage)
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              child: Image.network(s['imageUrl']!, height: 150, width: double.infinity, fit: BoxFit.cover,
+                errorBuilder: (context, error, stack) => Container(height: 150, color: Colors.grey, child: const Icon(Icons.broken_image))),
+            ),
           ListTile(
-            leading: Text(s['image']!, style: const TextStyle(fontSize: 32)),
+            leading: hasImage ? null : Text(s['image']!, style: const TextStyle(fontSize: 32)),
             title: Text(s['name']!, style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(s['desc']!),
             trailing: Container(

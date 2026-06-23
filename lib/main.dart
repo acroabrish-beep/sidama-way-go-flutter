@@ -5,23 +5,28 @@ import 'firebase_options.dart';
 import 'providers/tracking_provider.dart';
 import 'providers/ai_assistant_provider.dart';
 import 'screens/splash_screen.dart';
-
-import 'providers/language_provider.dart';
-
 import 'providers/city_platform_provider.dart';
-
 import 'providers/extended_platform_provider.dart';
 import 'providers/mobility_provider.dart';
 import 'providers/smart_city_provider.dart';
 import 'providers/location_provider.dart';
 import 'providers/map_provider.dart';
+import 'providers/auth_provider.dart';
+import 'utils/language_provider.dart';
+
+import 'services/boot_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Initialize City OS Data
+  await BootService.initializeCity();
+
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TrackingProvider()),
         ChangeNotifierProvider(create: (_) => AiAssistantProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),

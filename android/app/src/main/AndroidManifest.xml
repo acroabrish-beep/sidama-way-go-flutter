@@ -6,14 +6,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
-        android:label="sidama_way_go"
+        android:label="SIDAMA WAY GO"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
-        <!-- Google Maps API Key -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDefault_Replace_With_Real_Key"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class HealthcareScreen extends StatelessWidget {
   const HealthcareScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final hospitals = [
-      {'name': 'Hawassa Referral Hospital', 'type': 'Public', 'distance': '1.2 km', 'icon': Icons.local_hospital},
-      {'name': 'Kibebe Tsehay Hospital', 'type': 'Private', 'distance': '2.5 km', 'icon': Icons.local_hospital},
-      {'name': 'Adare Hospital', 'type': 'Public', 'distance': '3.8 km', 'icon': Icons.medical_services},
-    ];
-
     return Scaffold(
       appBar: AppBar(title: const Text('HEALTHCARE HUB')),
       body: SingleChildScrollView(
@@ -32,13 +29,79 @@ class HealthcareScreen extends StatelessWidget {
             const SizedBox(height: 32),
             const Text('NEARBY HOSPITALS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 16),
-            ...hospitals.map((h) => _buildHospitalCard(h)),
+            _buildHospitalList(),
             const SizedBox(height: 32),
             const Text('SPECIALISTS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
             const SizedBox(height: 16),
-            _buildDoctorList(),
+            _buildDoctorListStream(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHospitalList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('hospitals').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        if (snapshot.data!.docs.isEmpty) return const Text('No hospitals found.', style: TextStyle(color: Colors.grey));
+
+        return Column(
+          children: snapshot.data!.docs.map((doc) {
+            final h = doc.data() as Map<String, dynamic>;
+            return _buildHospitalCard(context, doc);
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  void _bookAppointment(BuildContext context, DocumentSnapshot hospitalDoc) {
+    final h = hospitalDoc.data() as Map<String, dynamic>;
+    final reasonC = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Appointment: ${h['name']}'),
+        content: TextField(controller: reasonC, decoration: const InputDecoration(labelText: 'Reason for visit')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          ElevatedButton(
+            onPressed: () async {
+              final user = Provider.of<AuthProvider>(context, listen: false).userModel;
+              await FirebaseFirestore.instance.collection('appointments').add({
+                'hospitalId': hospitalDoc.id,
+                'hospitalName': h['name'],
+                'patientName': user?.fullName ?? 'Patient',
+                'patientPhone': user?.phone ?? 'N/A',
+                'reason': reasonC.text,
+                'status': 'pending',
+                'userId': user?.uid,
+                'createdAt': FieldValue.serverTimestamp(),
+              });
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Appointment requested!')));
+            },
+            child: const Text('BOOK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHospitalCard(BuildContext context, DocumentSnapshot doc) {
+    final h = doc.data() as Map<String, dynamic>;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(backgroundColor: Colors.red.withOpacity(0.1), child: const Icon(Icons.local_hospital, color: Colors.red)),
+        title: Text(h['name'] ?? 'Hospital', style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(h['location'] ?? 'Hawassa'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => _bookAppointment(context, doc),
       ),
     );
   }
@@ -59,35 +122,33 @@ class HealthcareScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHospitalCard(Map<String, dynamic> h) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(backgroundColor: Colors.red.withOpacity(0.1), child: Icon(h['icon'] as IconData, color: Colors.red)),
-        title: Text(h['name'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('${h['type']} • ${h['distance']}'),
-        trailing: const Icon(Icons.chevron_right),
-      ),
-    );
-  }
+  Widget _buildDoctorListStream() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('doctors').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        if (snapshot.data!.docs.isEmpty) return const Text('No doctors available.', style: TextStyle(color: Colors.grey));
 
-  Widget _buildDoctorList() {
-    final doctors = [
-      {'name': 'Dr. Abebe K.', 'specialty': 'Cardiologist', 'rating': '4.9'},
-      {'name': 'Dr. Selam T.', 'specialty': 'Pediatrician', 'rating': '4.8'},
-    ];
-    return Column(
-      children: doctors.map((d) => Card(
-        child: ListTile(
-          leading: const CircleAvatar(child: Icon(Icons.person)),
-          title: Text(d['name']!),
-          subtitle: Text(d['specialty']!),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [const Icon(Icons.star, color: Colors.amber, size: 16), Text(' ${d['rating']}')],
-          ),
-        ),
-      )).toList(),
+        return Column(
+          children: snapshot.data!.docs.map((doc) {
+            final d = doc.data() as Map<String, dynamic>;
+            return Card(
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.person)),
+                title: Text(d['name'] ?? 'Dr. Name'),
+                subtitle: Text(d['specialty'] ?? 'Specialist'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.star, color: Colors.amber, size: 16),
+                    Text(' ${d['rating'] ?? '5.0'}'),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 }

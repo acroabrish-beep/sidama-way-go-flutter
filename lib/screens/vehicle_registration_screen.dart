@@ -11,18 +11,16 @@ class VehicleRegistrationScreen extends StatefulWidget {
 class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _plateController = TextEditingController();
-  final _driverController = TextEditingController();
-  final _ownerController = TextEditingController();
-  final _routeController = TextEditingController();
+  final _typeController = TextEditingController();
+  final _capacityController = TextEditingController();
   String _vehicleType = 'City Taxi';
   bool _isLoading = false;
 
   @override
   void dispose() {
     _plateController.dispose();
-    _driverController.dispose();
-    _ownerController.dispose();
-    _routeController.dispose();
+    _typeController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
 
@@ -34,19 +32,19 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
       await FirebaseFirestore.instance.collection('vehicles').add({
         'plateNumber': _plateController.text,
         'type': _vehicleType,
-        'driverName': _driverController.text,
-        'ownerName': _ownerController.text,
-        'route': _routeController.text,
-        'status': 'Active',
+        'capacity': num.tryParse(_capacityController.text) ?? 0,
+        'status': 'active',
         'createdAt': FieldValue.serverTimestamp(),
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vehicle Registered Successfully')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vehicle saved!')));
       _formKey.currentState!.reset();
+      _plateController.clear();
+      _capacityController.clear();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -79,19 +77,10 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      controller: _driverController,
-                      decoration: const InputDecoration(labelText: 'Driver Name', border: OutlineInputBorder()),
-                      validator: (v) => v!.isEmpty ? 'Enter driver name' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _ownerController,
-                      decoration: const InputDecoration(labelText: 'Owner Name', border: OutlineInputBorder()),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _routeController,
-                      decoration: const InputDecoration(labelText: 'Assigned Route', border: OutlineInputBorder()),
+                      controller: _capacityController,
+                      decoration: const InputDecoration(labelText: 'Capacity', border: OutlineInputBorder()),
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v!.isEmpty ? 'Enter capacity' : null,
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
@@ -99,7 +88,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _submit,
-                        child: _isLoading ? const CircularProgressIndicator() : const Text('REGISTER VEHICLE'),
+                        child: _isLoading ? const CircularProgressIndicator() : const Text('SAVE VEHICLE'),
                       ),
                     ),
                   ],
@@ -116,16 +105,20 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance.collection('vehicles').orderBy('createdAt', descending: true).snapshots(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
                 if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
                 final docs = snapshot.data!.docs;
+                if (docs.isEmpty) return const Center(child: Text('No vehicles yet.'));
+
                 return ListView.builder(
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     return ListTile(
-                      title: Text(data['plateNumber']),
-                      subtitle: Text('${data['type']} - ${data['driverName']}'),
-                      trailing: Chip(label: Text(data['status'] ?? 'Active')),
+                      leading: const Icon(Icons.directions_car, color: Colors.blue),
+                      title: Text(data['plateNumber'] ?? 'N/A'),
+                      subtitle: Text('${data['type']} | Cap: ${data['capacity']}'),
+                      trailing: Chip(label: Text(data['status'] ?? 'active')),
                     );
                   },
                 );
