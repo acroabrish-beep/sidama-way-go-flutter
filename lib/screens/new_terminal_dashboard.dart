@@ -88,6 +88,10 @@ class _NewTerminalDashboardState extends State<NewTerminalDashboard> with Single
       children: [
         _buildQuickStats(),
         const SizedBox(height: 24),
+        const Text('Recent Bookings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        _buildRecentBookingsList(),
+        const SizedBox(height: 24),
         const Text('System Health', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         _buildHealthIndicators(),
@@ -96,6 +100,38 @@ class _NewTerminalDashboardState extends State<NewTerminalDashboard> with Single
         const SizedBox(height: 16),
         _buildExecutiveChart(),
       ],
+    );
+  }
+
+  Widget _buildRecentBookingsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('bookings')
+          .where('terminal', isEqualTo: terminalName)
+          .orderBy('createdAt', descending: true)
+          .limit(5)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) return const Text('No recent bookings.', style: TextStyle(color: Colors.white70));
+
+        return Column(
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: GlassCard(
+                child: ListTile(
+                  title: Text(data['passengerName'] as String? ?? 'Passenger', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: Text('${data['route'] ?? 'Bus Route'} • ${data['status'] ?? 'Confirmed'}', style: const TextStyle(color: Colors.white70)),
+                  trailing: Text('${data['fare'] ?? 0} ETB', style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -110,17 +146,20 @@ class _NewTerminalDashboardState extends State<NewTerminalDashboard> with Single
       children: [
         _statCard('Live Vehicles', 'vehicles', Icons.bolt, Colors.yellowAccent),
         _statCard('Active Trips', 'schedules', Icons.trending_up, Colors.greenAccent),
-        _statCard('Passengers Today', 'bookings', Icons.person_pin, Colors.cyanAccent, valueOverride: '1.2k'),
-        _statCard('QR Tickets Issued', 'bookings', Icons.qr_code, Colors.purpleAccent, valueOverride: '432'),
+        _statCard('Passengers Today', 'bookings', Icons.person_pin, Colors.cyanAccent),
+        _statCard('QR Tickets Issued', 'bookings', Icons.qr_code, Colors.purpleAccent),
       ],
     );
   }
 
-  Widget _statCard(String label, String collection, IconData icon, Color color, {String? valueOverride}) {
+  Widget _statCard(String label, String collection, IconData icon, Color color) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection(collection).where('terminal', isEqualTo: terminalName).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection(collection)
+          .where('terminal', isEqualTo: terminalName)
+          .snapshots(),
       builder: (context, snapshot) {
-        String val = valueOverride ?? (snapshot.hasData ? snapshot.data!.docs.length.toString() : '...');
+        String val = snapshot.hasData ? snapshot.data!.docs.length.toString() : '...';
         return GlassCard(
           padding: const EdgeInsets.all(12),
           child: Column(

@@ -63,12 +63,17 @@ class _TerminalsTab extends StatelessWidget {
 
             return Column(
               children: docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
+                final data = doc.data() as Map<String, dynamic>? ?? {};
+                final name = data['passengerName'] as String? ?? 'No Name';
+                final route = data['route'] as String? ?? 'Unknown Route';
+                final fare = data['fare'] as num? ?? 0;
+                final status = data['status'] as String? ?? 'Confirmed';
+
                 return Card(
                   child: ListTile(
-                    title: Text(data['passengerName'] ?? 'No Name'),
-                    subtitle: Text('${data['route']} - ${data['fare']} ETB'),
-                    trailing: Chip(label: Text(data['status'] ?? 'Confirmed')),
+                    title: Text(name),
+                    subtitle: Text('$route - $fare ETB'),
+                    trailing: Chip(label: Text(status)),
                   ),
                 );
               }).toList(),

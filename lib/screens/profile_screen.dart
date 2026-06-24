@@ -162,12 +162,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const SizedBox();
             return Column(
               children: snapshot.data!.docs.map((doc) {
-                final d = doc.data() as Map<String, dynamic>;
+                final d = doc.data() as Map<String, dynamic>? ?? {};
+                final route = d['route'] as String? ?? 'Bus Booking';
+                final status = d['status'] as String? ?? '';
+                final fare = d['fare'] as num? ?? 0;
                 return ListTile(
                   dense: true,
-                  title: Text(d['route'] ?? 'Bus Booking'),
-                  subtitle: Text(d['status'] ?? ''),
-                  trailing: Text('${d['fare']} ETB'),
+                  title: Text(route),
+                  subtitle: Text(status),
+                  trailing: Text('$fare ETB'),
                 );
               }).toList(),
             );

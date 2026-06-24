@@ -134,9 +134,17 @@ class _TouristScreenState extends State<TouristScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              'https://images.unsplash.com/photo-1590059516315-f559648981f2?q=80&w=1000&auto=format&fit=crop',
-              fit: BoxFit.cover,
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1B5E20), Color(0xFF4CAF50)],
+                ),
+              ),
+              child: const Center(
+                child: Text('🌊', style: TextStyle(fontSize: 80)),
+              ),
             ),
             Container(
               decoration: BoxDecoration(
@@ -267,21 +275,30 @@ class _TouristScreenState extends State<TouristScreen> {
 
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
           final moreSites = snapshot.data!.docs.map((doc) {
-            final s = doc.data() as Map<String, dynamic>;
+            final s = doc.data() as Map<String, dynamic>? ?? {};
+
+            final loc = s['location'];
+            String locationStr = 'Hawassa';
+            if (loc is GeoPoint) {
+              locationStr = '${loc.latitude.toStringAsFixed(4)}, ${loc.longitude.toStringAsFixed(4)}';
+            } else if (loc is String) {
+              locationStr = loc;
+            }
+
             return _buildAttractionCard(context, Attraction(
-              name: s['name'] ?? 'Site',
-              category: s['category'] ?? 'General',
-              description: s['description'] ?? '',
-              fullDescription: s['description'] ?? '',
-              imageUrl: s['imageUrl'] ?? 'https://via.placeholder.com/400',
-              gallery: [s['imageUrl'] ?? 'https://via.placeholder.com/400'],
-              rating: (s['rating'] ?? 4.5).toDouble(),
-              visitTime: s['visitTime'] ?? '1-2 hours',
-              openingHours: s['openingHours'] ?? 'Daylight hours',
-              tips: s['tips'] != null ? List<String>.from(s['tips']) : ['Enjoy your visit!'],
-              bestTime: s['bestTime'] ?? 'Daytime',
-              nearby: s['nearby'] != null ? List<String>.from(s['nearby']) : [],
-              location: s['location'] ?? 'Hawassa',
+              name: (s['name'] as String?) ?? 'Site',
+              category: (s['category'] as String?) ?? 'General',
+              description: (s['description'] as String?) ?? '',
+              fullDescription: (s['description'] as String?) ?? '',
+              imageUrl: '',
+              gallery: [],
+              rating: (s['rating'] as num? ?? 4.5).toDouble(),
+              visitTime: (s['visitTime'] as String?) ?? '1-2 hours',
+              openingHours: (s['openingHours'] as String?) ?? 'Daylight hours',
+              tips: s['tips'] != null ? List<String>.from(s['tips'] as List) : ['Enjoy your visit!'],
+              bestTime: (s['bestTime'] as String?) ?? 'Daytime',
+              nearby: s['nearby'] != null ? List<String>.from(s['nearby'] as List) : [],
+              location: locationStr,
             ));
           }).toList();
           list.addAll(moreSites);
@@ -313,11 +330,22 @@ class _TouristScreenState extends State<TouristScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                child: Image.network(
-                  attr.imageUrl,
+                child: Container(
                   height: 200,
                   width: double.infinity,
-                  fit: BoxFit.cover,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.green.shade700, Colors.green.shade400],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _getCategoryEmoji(attr.category),
+                      style: const TextStyle(fontSize: 60),
+                    ),
+                  ),
                 ),
               ),
               Positioned(
@@ -414,26 +442,41 @@ class _TouristScreenState extends State<TouristScreen> {
     );
   }
 
+  String _getCategoryEmoji(String category) {
+    switch (category.toLowerCase()) {
+      case 'nature': return '🌿';
+      case 'park': return '🌳';
+      case 'adventure': return '⛰️';
+      case 'culture/food': return '🐟';
+      case 'food': return '🍲';
+      case 'culture': return '🎭';
+      case 'hotel': return '🏨';
+      default: return '📍';
+    }
+  }
+
   Widget _buildGallerySection() {
-    final images = [
-      'https://images.unsplash.com/photo-1590059516315-f559648981f2?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1583226305018-b8089456e792?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1534604973900-c41ab4c5e036?q=80&w=400&auto=format&fit=crop',
-    ];
+    final emojis = ['🌅', '🐦', '🛶', '☕', '🦒', '🌺'];
 
     return SizedBox(
       height: 120,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: images.length,
+        itemCount: emojis.length,
         itemBuilder: (context, index) {
           return Container(
             width: 120,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              image: DecorationImage(image: NetworkImage(images[index]), fit: BoxFit.cover),
+              gradient: LinearGradient(
+                colors: [Colors.blue.shade300, Colors.blue.shade600],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: Text(emojis[index], style: const TextStyle(fontSize: 40)),
             ),
           );
         },

@@ -74,24 +74,30 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
   }
 
   Widget _buildMedicineItem(BuildContext context, DocumentSnapshot doc) {
-    final m = doc.data() as Map<String, dynamic>;
+    final m = doc.data() as Map<String, dynamic>? ?? {};
+    final name = m['name'] as String? ?? 'Medicine';
+    final quantity = m['quantity'] as num? ?? 0;
+    final price = m['price'] as num? ?? 0;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        title: Text(m['name'] ?? 'Medicine'),
-        subtitle: Text('Stock: ${m['quantity'] ?? 0}'),
-        trailing: Text('${m['price'] ?? 0} ETB', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+        title: Text(name),
+        subtitle: Text('Stock: $quantity'),
+        trailing: Text('$price ETB', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
         onTap: () => _orderMedicine(context, doc),
       ),
     );
   }
 
   void _orderMedicine(BuildContext context, DocumentSnapshot medDoc) {
-    final m = medDoc.data() as Map<String, dynamic>;
+    final m = medDoc.data() as Map<String, dynamic>? ?? {};
+    final medName = m['name'] as String? ?? 'Medicine';
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Order ${m['name']}'),
+        title: Text('Order $medName'),
         content: const Text('Do you want to order this medicine? Delivery takes 30-60 mins.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
@@ -100,7 +106,7 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
               final user = Provider.of<AuthProvider>(context, listen: false).userModel;
               await FirebaseFirestore.instance.collection('medicine_orders').add({
                 'medicineId': medDoc.id,
-                'medicineName': m['name'],
+                'medicineName': medName,
                 'customerName': user?.fullName ?? 'Customer',
                 'customerPhone': user?.phone ?? 'N/A',
                 'status': 'pending',

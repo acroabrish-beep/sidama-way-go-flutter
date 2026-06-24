@@ -225,7 +225,7 @@ Widget _buildCRUDView(BuildContext context, String collection, String title, Lis
               padding: const EdgeInsets.all(16),
               itemCount: docs.length,
               itemBuilder: (context, i) {
-                final data = docs[i].data() as Map<String, dynamic>;
+                final data = docs[i].data() as Map<String, dynamic>? ?? {};
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: GlassCard(

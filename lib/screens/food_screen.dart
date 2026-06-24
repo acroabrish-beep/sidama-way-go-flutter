@@ -101,8 +101,18 @@ class _FoodScreenState extends State<FoodScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: docs.length,
                   itemBuilder: (context, i) {
-                    final r = docs[i].data() as Map<String, dynamic>;
-                    final color = Color(int.parse(r['color'] ?? '0xFFAD1457'));
+                    final r = docs[i].data() as Map<String, dynamic>? ?? {};
+                    final colorStr = r['color'] as String? ?? '0xFFAD1457';
+                    final color = Color(int.parse(colorStr));
+
+                    final name = r['name'] as String? ?? 'Restaurant';
+                    final location = r['location'] as String? ?? 'Hawassa';
+
+                    final rating = (r['rating'] as num? ?? 4.5).toDouble();
+                    final cuisine = r['cuisine'] as String? ?? 'Ethiopian';
+                    final deliveryTime = r['deliveryTime'] as String? ?? '20-30 min';
+                    final isOpen = r['isOpen'] as bool? ?? true;
+
                     return Card(
                       margin: const EdgeInsets.only(bottom: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -116,15 +126,44 @@ class _FoodScreenState extends State<FoodScreen> {
                               color: color.withOpacity(0.2),
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             ),
-                            child: Icon(Icons.restaurant, size: 60, color: color),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Icon(Icons.restaurant, size: 60, color: color),
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.star, color: Colors.amber, size: 14),
+                                        Text(' $rating', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                           Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(r['name'] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                Text(r['location'] as String, style: const TextStyle(color: Colors.grey)),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                    Text(isOpen ? 'OPEN' : 'CLOSED', style: TextStyle(color: isOpen ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 10)),
+                                  ],
+                                ),
+                                Text('$cuisine • $location', style: const TextStyle(color: Colors.grey)),
+                                Text('Estimated: $deliveryTime', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                 const SizedBox(height: 12),
                                 _buildMenuSnippet(docs[i].id),
                                 const SizedBox(height: 16),
@@ -162,14 +201,16 @@ class _FoodScreenState extends State<FoodScreen> {
           children: [
             const Text('Menu Highlights:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             ...snapshot.data!.docs.map((m) {
-              final d = m.data() as Map<String, dynamic>;
+              final d = m.data() as Map<String, dynamic>? ?? {};
+              final name = d['name'] as String? ?? 'Item';
+              final price = d['price'] as num? ?? 0;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 1),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(d['name'] ?? '', style: const TextStyle(fontSize: 12)),
-                    Text('${d['price']} ETB', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(name, style: const TextStyle(fontSize: 12)),
+                    Text('$price ETB', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ],
                 ),
               );
@@ -195,14 +236,16 @@ class _OrderBottomSheetState extends State<_OrderBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final rest = widget.restDoc.data() as Map<String, dynamic>;
+    final rest = widget.restDoc.data() as Map<String, dynamic>? ?? {};
+    final restName = rest['name'] as String? ?? 'Restaurant';
+
     return Container(
       padding: const EdgeInsets.all(24),
       height: MediaQuery.of(context).size.height * 0.8,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(rest['name'], style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(restName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -213,9 +256,9 @@ class _OrderBottomSheetState extends State<_OrderBottomSheet> {
                 return ListView.builder(
                   itemCount: items.length,
                   itemBuilder: (context, i) {
-                    final item = items[i].data() as Map<String, dynamic>;
-                    final name = item['name'];
-                    final price = item['price'];
+                    final item = items[i].data() as Map<String, dynamic>? ?? {};
+                    final name = item['name'] as String? ?? 'Item';
+                    final price = item['price'] as num? ?? 0;
                     return ListTile(
                       title: Text(name),
                       subtitle: Text('$price ETB'),
@@ -252,7 +295,8 @@ class _OrderBottomSheetState extends State<_OrderBottomSheet> {
   void _checkout() async {
     try {
       final user = Provider.of<AuthProvider>(context, listen: false).userModel;
-      final rest = widget.restDoc.data() as Map<String, dynamic>;
+      final rest = widget.restDoc.data() as Map<String, dynamic>? ?? {};
+      final restName = rest['name'] as String? ?? 'Restaurant';
 
       List<Map<String, dynamic>> orderItems = [];
       _cart.forEach((name, qty) {
@@ -263,7 +307,7 @@ class _OrderBottomSheetState extends State<_OrderBottomSheet> {
 
       await FirebaseFirestore.instance.collection('food_orders').add({
         'restaurantId': widget.restDoc.id,
-        'restaurantName': rest['name'],
+        'restaurantName': restName,
         'items': orderItems,
         'userId': user?.uid,
         'userName': user?.fullName,

@@ -85,10 +85,46 @@ class _OldTerminalDashboardState extends State<OldTerminalDashboard> with Single
       children: [
         _buildSummaryCards(),
         const SizedBox(height: 24),
+        const Text('Recent Bookings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        _buildRecentBookingsList(),
+        const SizedBox(height: 24),
         const Text('Today\'s Revenue Trend', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
         _buildRevenueChart(),
       ],
+    );
+  }
+
+  Widget _buildRecentBookingsList() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('bookings')
+          .where('terminal', isEqualTo: terminalName)
+          .orderBy('createdAt', descending: true)
+          .limit(5)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) return const Text('No recent bookings.', style: TextStyle(color: Colors.white70));
+
+        return Column(
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: GlassCard(
+                child: ListTile(
+                  title: Text(data['passengerName'] as String? ?? 'Passenger', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  subtitle: Text('${data['route'] ?? 'Bus Route'} • ${data['status'] ?? 'Confirmed'}', style: const TextStyle(color: Colors.white70)),
+                  trailing: Text('${data['fare'] ?? 0} ETB', style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
@@ -103,17 +139,17 @@ class _OldTerminalDashboardState extends State<OldTerminalDashboard> with Single
       children: [
         _statCard('Total Vehicles', 'vehicles', Icons.directions_bus, Colors.blueAccent),
         _statCard('Active Drivers', 'drivers', Icons.person, Colors.greenAccent),
-        _statCard('Today\'s Passengers', 'bookings', Icons.people, Colors.orangeAccent, valueOverride: '842'),
-        _statCard('Daily Revenue', 'bookings', Icons.account_balance_wallet, Colors.tealAccent, valueOverride: '12,450 ETB'),
+        _statCard('Today\'s Bookings', 'bookings', Icons.people, Colors.orangeAccent),
+        _statCard('Pending Complaints', 'complaints', Icons.report_problem, Colors.redAccent),
       ],
     );
   }
 
-  Widget _statCard(String label, String collection, IconData icon, Color color, {String? valueOverride}) {
+  Widget _statCard(String label, String collection, IconData icon, Color color) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection(collection).where('terminal', isEqualTo: terminalName).snapshots(),
       builder: (context, snapshot) {
-        String val = valueOverride ?? (snapshot.hasData ? snapshot.data!.docs.length.toString() : '...');
+        String val = snapshot.hasData ? snapshot.data!.docs.length.toString() : '...';
         return GlassCard(
           padding: const EdgeInsets.all(12),
           child: Column(

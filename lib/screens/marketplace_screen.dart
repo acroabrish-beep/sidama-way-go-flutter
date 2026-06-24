@@ -85,14 +85,19 @@ class MarketplaceScreen extends StatelessWidget {
 
         return Column(
           children: docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            final name = data['name'] as String? ?? 'Provider';
+            final category = data['category'] as String? ?? 'General';
+            final rating = (data['rating'] as num? ?? 5.0).toString();
+            final jobsDone = data['jobsDone'] as num? ?? 0;
+
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
                 leading: const CircleAvatar(backgroundColor: Colors.deepOrange, child: Icon(Icons.person, color: Colors.white)),
-                title: Text(data['name'] ?? 'Provider', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('${data['category']} • ${data['rating'] ?? '5.0'} ⭐'),
-                trailing: Text('${data['jobsDone'] ?? 0} jobs', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text('$category • $rating ⭐'),
+                trailing: Text('$jobsDone jobs', style: const TextStyle(fontSize: 10, color: Colors.grey)),
               ),
             );
           }).toList(),

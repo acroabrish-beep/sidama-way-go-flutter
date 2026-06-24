@@ -193,11 +193,11 @@ class _MainHub extends StatelessWidget {
                       if (!snapshot.hasData) return const SizedBox();
                       return Column(
                         children: snapshot.data!.docs.map((doc) {
-                          final d = doc.data() as Map<String, dynamic>;
+                          final d = doc.data() as Map<String, dynamic>? ?? {};
                           return _announcementCard(
-                            d['title'] ?? 'City Update',
-                            d['message'] ?? '',
-                            _getCategoryColor(d['category']),
+                            d['title'] as String? ?? 'City Update',
+                            d['message'] as String? ?? '',
+                            _getCategoryColor(d['category'] as String?),
                           );
                         }).toList(),
                       );
@@ -238,8 +238,8 @@ class _MainHub extends StatelessWidget {
               child: PageView.builder(
                 itemCount: docs.length,
                 itemBuilder: (context, i) {
-                  final d = docs[i].data() as Map<String, dynamic>;
-                  final color = _getCategoryColor(d['category']);
+                  final d = docs[i].data() as Map<String, dynamic>? ?? {};
+                  final color = _getCategoryColor(d['category'] as String?);
                   return Card(
                     color: color.withOpacity(0.1),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: color.withOpacity(0.3))),
@@ -254,8 +254,8 @@ class _MainHub extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(d['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                                Text(d['message'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+                                Text(d['title'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                Text(d['message'] as String? ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
                               ],
                             ),
                           ),

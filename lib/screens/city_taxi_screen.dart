@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart' as custom_auth;
+import 'book_ride_screen.dart';
 
 class CityTaxiScreen extends StatefulWidget {
   const CityTaxiScreen({super.key});
@@ -13,6 +14,8 @@ class CityTaxiScreen extends StatefulWidget {
 
 class _CityTaxiScreenState extends State<CityTaxiScreen> {
   String? _activeRequestId;
+  String _selectedBase = 'Piassa';
+  final List<String> _bases = ['Piassa', 'Menaharia', 'Tabor', 'Gudumale', 'Addis Ketema'];
 
   Future<void> _seedTaxiRoutes() async {
     try {
@@ -66,45 +69,65 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
 
   Widget _buildAreaGrid() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('taxi_routes').snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('taxi_routes')
+          .where('from', isEqualTo: _selectedBase)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
 
         final routes = snapshot.data?.docs ?? [];
-        if (routes.isEmpty) return const Center(child: Text('No taxi routes available.'));
+        if (routes.isEmpty) return const Center(child: Text('No taxi routes available from this base.'));
 
         return GridView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 1.5,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
+            mainAxisExtent: 120,
           ),
           itemCount: routes.length,
           itemBuilder: (context, index) {
             final r = routes[index].data() as Map<String, dynamic>;
-            final name = r['to'] ?? 'Unnamed';
-            final fare = r['fare'] ?? 10;
-            final duration = r['duration'] ?? 'N/A';
+            final name = r['to'] as String? ?? 'Unnamed';
+            final fare = r['fare'] as num? ?? 10;
 
             return Card(
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 2,
-              child: InkWell(
-                onTap: () => _showBookingSheet({'name': name, 'fare': fare, 'duration': duration}),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.local_taxi, color: Color(0xFFE65100)),
-                      const SizedBox(height: 8),
-                      Text(name, style: const TextStyle(fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                      Text('$fare ETB • $duration', style: const TextStyle(color: Colors.grey, fontSize: 10)),
-                    ],
-                  ),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.local_taxi, color: Color(0xFFE65100), size: 24),
+                    const SizedBox(height: 4),
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text('$fare ETB', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 28,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BookRideScreen(preselectedDestination: name),
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFE65100),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        child: const Text('Book', style: TextStyle(fontSize: 10)),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -138,12 +161,33 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
               color: Color(0xFFE65100),
               borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Where are you going?', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Text('Select a destination from Piassa base', style: TextStyle(color: Colors.white70)),
+                const Text('Where are you going?', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                const Text('Select Pickup Base', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _bases.map((base) {
+                      final isSelected = _selectedBase == base;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(base),
+                          selected: isSelected,
+                          onSelected: (s) => setState(() => _selectedBase = base),
+                          selectedColor: Colors.white,
+                          backgroundColor: Colors.white24,
+                          labelStyle: TextStyle(color: isSelected ? const Color(0xFFE65100) : Colors.white, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+                          showCheckmark: false,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ],
             ),
           ),

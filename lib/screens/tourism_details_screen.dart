@@ -90,9 +90,17 @@ class TourismDetailsScreen extends StatelessWidget {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
-              attraction.imageUrl,
-              fit: BoxFit.cover,
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.green.shade900, Colors.green.shade600],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: const Center(
+                child: Text('🌿', style: TextStyle(fontSize: 100)),
+              ),
             ),
             Container(
               decoration: BoxDecoration(
@@ -186,16 +194,24 @@ class TourismDetailsScreen extends StatelessWidget {
           height: 150,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: attraction.gallery.length,
+            itemCount: attraction.gallery.length.clamp(0, 5),
             itemBuilder: (context, index) {
+              final List<String> galleryEmojis = ['🌅', '📸', '🏞️', '✨', '🍃'];
               return Container(
                 margin: const EdgeInsets.only(right: 12),
                 width: 200,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  image: DecorationImage(
-                    image: NetworkImage(attraction.gallery[index]),
-                    fit: BoxFit.cover,
+                  gradient: LinearGradient(
+                    colors: [Colors.blue.shade400, Colors.blue.shade700],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    galleryEmojis[index % galleryEmojis.length],
+                    style: const TextStyle(fontSize: 40),
                   ),
                 ),
               );

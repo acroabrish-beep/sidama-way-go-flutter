@@ -6,7 +6,8 @@ import '../services/smart_services.dart';
 enum RideState { idle, searching, driverFound, tracking, completed }
 
 class BookRideScreen extends StatefulWidget {
-  const BookRideScreen({super.key});
+  final String? preselectedDestination;
+  const BookRideScreen({super.key, this.preselectedDestination});
 
   @override
   State<BookRideScreen> createState() => _BookRideScreenState();
@@ -14,13 +15,22 @@ class BookRideScreen extends StatefulWidget {
 
 class _BookRideScreenState extends State<BookRideScreen> {
   RideState _state = RideState.idle;
+  late TextEditingController _destController;
   String? _selectedDest;
   String? _aiRecommendation;
 
   @override
   void initState() {
     super.initState();
+    _selectedDest = widget.preselectedDestination;
+    _destController = TextEditingController(text: _selectedDest);
     _loadAIRecommendation();
+  }
+
+  @override
+  void dispose() {
+    _destController.dispose();
+    super.dispose();
   }
 
   void _loadAIRecommendation() async {
@@ -73,6 +83,7 @@ class _BookRideScreenState extends State<BookRideScreen> {
         const Text('WHERE ARE YOU GOING?', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
         const SizedBox(height: 16),
         TextField(
+          controller: _destController,
           decoration: InputDecoration(
             hintText: 'Enter destination...',
             prefixIcon: const Icon(Icons.location_on, color: Colors.green),

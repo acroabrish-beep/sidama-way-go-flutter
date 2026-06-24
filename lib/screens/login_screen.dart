@@ -98,10 +98,14 @@ class _LoginScreenState extends State<LoginScreen> {
         break;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => nextScreen),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => nextScreen),
+        );
+      }
+    });
   }
 
   @override

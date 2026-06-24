@@ -41,9 +41,9 @@ class EcoShineScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   itemCount: stations.length,
                   itemBuilder: (context, i) {
-                    final s = stations[i].data() as Map<String, dynamic>;
-                    final name = s['name'] ?? 'Station';
-                    final status = s['status'] ?? 'Open';
+                    final s = stations[i].data() as Map<String, dynamic>? ?? {};
+                    final name = s['name'] as String? ?? 'Station';
+                    final status = s['status'] as String? ?? 'Open';
                     // We'll calculate a dummy capacity for UI based on status
                     final capacity = status == 'Open' ? 0.3 : 1.0;
 

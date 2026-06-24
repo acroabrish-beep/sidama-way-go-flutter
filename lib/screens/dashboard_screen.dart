@@ -105,14 +105,14 @@ class DashboardScreen extends StatelessWidget {
 
         return Column(
           children: docs.map((doc) {
-            final d = doc.data() as Map<String, dynamic>;
-            final priority = d['priority'] ?? 'Medium';
+            final d = doc.data() as Map<String, dynamic>? ?? {};
+            final priority = d['priority'] as String? ?? 'Medium';
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
                 leading: Icon(Icons.warning_rounded, color: priority == 'High' ? Colors.red : Colors.orange),
-                title: Text(d['title'] ?? 'Alert'),
-                subtitle: Text(d['message'] ?? ''),
+                title: Text(d['title'] as String? ?? 'Alert'),
+                subtitle: Text(d['message'] as String? ?? ''),
                 trailing: Text(priority, style: TextStyle(color: priority == 'High' ? Colors.red : Colors.orange, fontWeight: FontWeight.bold)),
               ),
             );

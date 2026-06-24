@@ -73,13 +73,17 @@ class PharmacyDashboard extends StatelessWidget {
 
         return Column(
           children: docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final status = data['status'] ?? 'pending';
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            final status = data['status'] as String? ?? 'pending';
+            final medicineName = data['medicineName'] as String? ?? 'Medicine';
+            final customerName = data['customerName'] as String? ?? 'Customer';
+            final customerPhone = data['customerPhone'] as String? ?? 'N/A';
+
             return GlassCard(
               padding: const EdgeInsets.all(8),
               child: ListTile(
-                title: Text(data['medicineName']?.toString() ?? 'Medicine', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                subtitle: Text('By: ${data['customerName']}\nPhone: ${data['customerPhone']}', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                title: Text(medicineName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: Text('By: $customerName\nPhone: $customerPhone', style: const TextStyle(color: Colors.white70, fontSize: 10)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

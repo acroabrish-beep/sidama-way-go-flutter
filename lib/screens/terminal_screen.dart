@@ -244,19 +244,21 @@ class _TerminalScreenState extends State<TerminalScreen> {
           padding: const EdgeInsets.all(16),
           itemCount: routes.length,
           itemBuilder: (context, index) {
-            final r = routes[index].data() as Map<String, dynamic>;
-            final routeName = r['route'] ?? 'Unknown Route';
+            final r = routes[index].data() as Map<String, dynamic>? ?? {};
+            final routeName = r['route'] as String? ?? 'Unknown Route';
+            final duration = r['duration'] as String? ?? 'N/A';
+            final fare = r['fare'] as num? ?? 0;
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
                 title: Text(routeName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('Duration: ${r['duration'] ?? 'N/A'}'),
-                trailing: Text('${r['fare'] ?? 0} ETB', style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
+                subtitle: Text('Duration: $duration'),
+                trailing: Text('$fare ETB', style: const TextStyle(color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
                 onTap: () {
                   setState(() {
                     _selectedRoute = {
                       'route': routeName,
-                      'fare': r['fare'] ?? 0,
+                      'fare': fare,
                     };
                   });
                   _nextStep(TerminalStep.selectBus);
@@ -283,22 +285,23 @@ class _TerminalScreenState extends State<TerminalScreen> {
           padding: const EdgeInsets.all(16),
           itemCount: vehicles.length,
           itemBuilder: (context, index) {
-            final b = vehicles[index].data() as Map<String, dynamic>;
-            final busId = b['plateNumber'] ?? b['id'] ?? 'BUS-${index + 1}';
-            final company = b['type'] ?? b['company'] ?? 'Transport Co.';
+            final b = vehicles[index].data() as Map<String, dynamic>? ?? {};
+            final busId = b['plateNumber'] as String? ?? b['id'] as String? ?? 'BUS-${index + 1}';
+            final company = b['type'] as String? ?? b['company'] as String? ?? 'Transport Co.';
+            final capacity = b['capacity'] as num? ?? 40;
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(
                 leading: const Icon(Icons.directions_bus, color: Color(0xFF1565C0)),
                 title: Text(company, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('ID: $busId | Capacity: ${b['capacity'] ?? 40}'),
+                subtitle: Text('ID: $busId | Capacity: $capacity'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   setState(() {
                     _selectedBus = {
                       'id': busId,
                       'company': company,
-                      'capacity': b['capacity'] ?? 40,
+                      'capacity': capacity,
                     };
                   });
                   _nextStep(TerminalStep.selectSeat);

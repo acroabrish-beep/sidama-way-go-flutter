@@ -109,13 +109,17 @@ class HospitalDashboard extends StatelessWidget {
 
         return Column(
           children: docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            final status = data['status'] ?? 'pending';
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            final status = data['status'] as String? ?? 'pending';
+            final patientName = data['patientName'] as String? ?? 'Patient';
+            final reason = data['reason'] as String? ?? 'N/A';
+            final hospitalName = data['hospitalName'] as String? ?? 'N/A';
+
             return GlassCard(
               padding: const EdgeInsets.all(8),
               child: ListTile(
-                title: Text(data['patientName']?.toString() ?? 'Patient', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                subtitle: Text('Reason: ${data['reason']}\nHospital: ${data['hospitalName']}', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                title: Text(patientName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: Text('Reason: $reason\nHospital: $hospitalName', style: const TextStyle(color: Colors.white70, fontSize: 10)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -143,14 +147,18 @@ class HospitalDashboard extends StatelessWidget {
         final docs = snapshot.data?.docs ?? [];
         return Column(
           children: docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
+            final data = doc.data() as Map<String, dynamic>? ?? {};
+            final name = data['name'] as String? ?? 'Dr. Smith';
+            final specialty = data['specialty'] as String? ?? 'General';
+            final isAvailable = data['status'] == 'Available' || data['isAvailable'] == true;
+
             return GlassCard(
               padding: const EdgeInsets.all(8),
               child: ListTile(
-                title: Text(data['name']?.toString() ?? 'Dr. Smith', style: const TextStyle(color: Colors.white)),
-                subtitle: Text(data['specialty']?.toString() ?? 'General', style: const TextStyle(color: Colors.white70)),
+                title: Text(name, style: const TextStyle(color: Colors.white)),
+                subtitle: Text(specialty, style: const TextStyle(color: Colors.white70)),
                 trailing: CircleAvatar(
-                  backgroundColor: data['status'] == 'Available' || data['isAvailable'] == true ? Colors.green : Colors.grey,
+                  backgroundColor: isAvailable ? Colors.green : Colors.grey,
                   radius: 5,
                 ),
               ),

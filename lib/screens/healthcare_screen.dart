@@ -49,7 +49,6 @@ class HealthcareScreen extends StatelessWidget {
 
         return Column(
           children: snapshot.data!.docs.map((doc) {
-            final h = doc.data() as Map<String, dynamic>;
             return _buildHospitalCard(context, doc);
           }).toList(),
         );
@@ -58,13 +57,14 @@ class HealthcareScreen extends StatelessWidget {
   }
 
   void _bookAppointment(BuildContext context, DocumentSnapshot hospitalDoc) {
-    final h = hospitalDoc.data() as Map<String, dynamic>;
+    final h = hospitalDoc.data() as Map<String, dynamic>? ?? {};
+    final hospitalName = h['name'] as String? ?? 'Hospital';
     final reasonC = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Appointment: ${h['name']}'),
+        title: Text('Appointment: $hospitalName'),
         content: TextField(controller: reasonC, decoration: const InputDecoration(labelText: 'Reason for visit')),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
@@ -73,7 +73,7 @@ class HealthcareScreen extends StatelessWidget {
               final user = Provider.of<AuthProvider>(context, listen: false).userModel;
               await FirebaseFirestore.instance.collection('appointments').add({
                 'hospitalId': hospitalDoc.id,
-                'hospitalName': h['name'],
+                'hospitalName': hospitalName,
                 'patientName': user?.fullName ?? 'Patient',
                 'patientPhone': user?.phone ?? 'N/A',
                 'reason': reasonC.text,
@@ -93,13 +93,16 @@ class HealthcareScreen extends StatelessWidget {
   }
 
   Widget _buildHospitalCard(BuildContext context, DocumentSnapshot doc) {
-    final h = doc.data() as Map<String, dynamic>;
+    final h = doc.data() as Map<String, dynamic>? ?? {};
+    final name = h['name'] as String? ?? 'Hospital';
+    final location = h['location'] as String? ?? 'Hawassa';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(backgroundColor: Colors.red.withOpacity(0.1), child: const Icon(Icons.local_hospital, color: Colors.red)),
-        title: Text(h['name'] ?? 'Hospital', style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(h['location'] ?? 'Hawassa'),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(location),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => _bookAppointment(context, doc),
       ),
@@ -131,17 +134,21 @@ class HealthcareScreen extends StatelessWidget {
 
         return Column(
           children: snapshot.data!.docs.map((doc) {
-            final d = doc.data() as Map<String, dynamic>;
+            final d = doc.data() as Map<String, dynamic>? ?? {};
+            final name = d['name'] as String? ?? 'Dr. Name';
+            final specialty = d['specialty'] as String? ?? 'Specialist';
+            final rating = (d['rating'] as num? ?? 5.0).toString();
+
             return Card(
               child: ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.person)),
-                title: Text(d['name'] ?? 'Dr. Name'),
-                subtitle: Text(d['specialty'] ?? 'Specialist'),
+                title: Text(name),
+                subtitle: Text(specialty),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 16),
-                    Text(' ${d['rating'] ?? '5.0'}'),
+                    Text(' $rating'),
                   ],
                 ),
               ),

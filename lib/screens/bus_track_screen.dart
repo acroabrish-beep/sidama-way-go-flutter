@@ -110,7 +110,7 @@ class _BusTrackScreenState extends State<BusTrackScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    r['route'] ?? 'Unknown Route',
+                                    r['route'] as String? ?? 'Unknown Route',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Color(routeColor),
@@ -137,7 +137,7 @@ class _BusTrackScreenState extends State<BusTrackScreen> {
                               ],
                             ),
                             const SizedBox(height: 12),
-                            Text('Origin: ${r['origin']} | Dest: ${r['destination']}', style: const TextStyle(fontSize: 12)),
+                            Text('Origin: ${r['origin'] as String? ?? 'N/A'} | Dest: ${r['destination'] as String? ?? 'N/A'}', style: const TextStyle(fontSize: 12)),
                             const SizedBox(height: 8),
                             Row(
                               children: [
@@ -148,7 +148,7 @@ class _BusTrackScreenState extends State<BusTrackScreen> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Fare: ${r['fare']} ETB',
+                                  'Fare: ${r['fare'] as num? ?? 0} ETB',
                                   style: const TextStyle(color: Colors.grey),
                                 ),
                               ],
