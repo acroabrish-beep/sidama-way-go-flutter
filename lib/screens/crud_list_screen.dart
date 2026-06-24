@@ -144,7 +144,7 @@ class _CRUDListScreenState extends State<CRUDListScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: DropdownButtonFormField<String>(
-                    value: controllers[f]!.text.isEmpty ? null : controllers[f]!.text,
+                    initialValue: controllers[f]!.text.isEmpty ? null : controllers[f]!.text,
                     decoration: const InputDecoration(labelText: 'TERMINAL', border: OutlineInputBorder()),
                     items: const [
                       DropdownMenuItem(value: 'Hawassa Old Terminal', child: Text('Hawassa Old Terminal')),

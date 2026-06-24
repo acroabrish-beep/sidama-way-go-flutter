@@ -44,7 +44,7 @@ class _DriverPanelScreenState extends State<DriverPanelScreen> {
                 Switch(
                   value: _isOnline,
                   onChanged: (v) => setState(() => _isOnline = v),
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                 ),
               ],
             ),

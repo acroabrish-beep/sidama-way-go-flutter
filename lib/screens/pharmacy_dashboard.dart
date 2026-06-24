@@ -11,6 +11,11 @@ class PharmacyDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DashboardBase(
       title: 'Pharmacy Admin',
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CRUDListScreen(collection: 'medicines', title: 'Medicines', fields: ['name', 'quantity', 'price', 'pharmacy']))),
+        backgroundColor: Colors.tealAccent,
+        child: const Icon(Icons.add_shopping_cart, color: Colors.teal),
+      ),
       children: [
         _buildStats(),
         const SizedBox(height: 24),
@@ -21,11 +26,6 @@ class PharmacyDashboard extends StatelessWidget {
         const SizedBox(height: 16),
         _buildInventoryList(),
       ],
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CRUDListScreen(collection: 'medicines', title: 'Medicines', fields: ['name', 'quantity', 'price', 'pharmacy']))),
-        backgroundColor: Colors.tealAccent,
-        child: const Icon(Icons.add_shopping_cart, color: Colors.teal),
-      ),
     );
   }
 

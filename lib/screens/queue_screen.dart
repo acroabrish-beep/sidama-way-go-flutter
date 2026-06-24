@@ -61,7 +61,7 @@ class _PassengerViewState extends State<_PassengerView> {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: DropdownButtonFormField<String>(
-            value: _selectedArea,
+            initialValue: _selectedArea,
             decoration: const InputDecoration(labelText: 'Filter by Area', border: OutlineInputBorder()),
             items: widget.areas.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
             onChanged: (v) => setState(() => _selectedArea = v),
@@ -189,7 +189,7 @@ class _DriverViewState extends State<_DriverView> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _selectedArea,
+            initialValue: _selectedArea,
             decoration: const InputDecoration(labelText: 'Select Area', border: OutlineInputBorder()),
             items: widget.areas.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
             onChanged: (v) => setState(() => _selectedArea = v),

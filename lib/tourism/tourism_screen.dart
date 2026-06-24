@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
-import '../maps/realtime_map_screen.dart';
 import '../providers/location_provider.dart';
 import '../screens/smart_city_map_screen.dart';
 

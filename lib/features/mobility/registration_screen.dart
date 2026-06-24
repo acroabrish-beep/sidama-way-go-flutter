@@ -35,7 +35,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
               DropdownButtonFormField<String>(
-                value: _vehicleType,
+                initialValue: _vehicleType,
                 items: ['City Taxi', 'Minibus', 'Intercity Bus']
                     .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                     .toList(),

@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart' as custom_auth;
 
@@ -264,39 +263,86 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
   }
 }
 
-class _ActiveRequestScreen extends StatelessWidget {
+class _ActiveRequestScreen extends StatefulWidget {
   final String requestId;
   final VoidCallback onClose;
   const _ActiveRequestScreen({required this.requestId, required this.onClose});
+
+  @override
+  State<_ActiveRequestScreen> createState() => _ActiveRequestScreenState();
+}
+
+class _ActiveRequestScreenState extends State<_ActiveRequestScreen> {
+  final _commentC = TextEditingController();
+  double _rating = 5.0;
+  bool _submittedRating = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE65100),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('taxi_requests').doc(requestId).snapshots(),
+        stream: FirebaseFirestore.instance.collection('taxi_requests').doc(widget.requestId).snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator(color: Colors.white));
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          final status = data['status'] ?? 'Pending';
-
-          if (status == 'Completed') {
+          if (!snapshot.data!.exists) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.white, size: 80),
-                  const SizedBox(height: 24),
-                  const Text('Trip Completed!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  Text('Total Fare: ${data['fare']} ETB', style: const TextStyle(color: Colors.white70, fontSize: 18)),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: onClose,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.orange),
-                    child: const Text('BACK TO HOME'),
-                  )
+                  const Text('Request no longer exists.', style: TextStyle(color: Colors.white)),
+                  ElevatedButton(onPressed: widget.onClose, child: const Text('GO BACK')),
                 ],
+              ),
+            );
+          }
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          final status = data['status'] ?? 'Pending';
+
+          if (status == 'Trip Completed' || status == 'Completed') {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.white, size: 80),
+                    const SizedBox(height: 24),
+                    const Text('Trip Completed!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    Text('Total Fare: ${data['fare']} ETB', style: const TextStyle(color: Colors.white70, fontSize: 18)),
+                    const SizedBox(height: 40),
+                    if (!_submittedRating) ...[
+                      const Text('How was your trip?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      Slider(
+                        value: _rating,
+                        min: 1,
+                        max: 5,
+                        divisions: 4,
+                        label: _rating.round().toString(),
+                        onChanged: (v) => setState(() => _rating = v),
+                        activeColor: Colors.yellowAccent,
+                      ),
+                      TextField(
+                        controller: _commentC,
+                        decoration: const InputDecoration(hintText: 'Add a comment (optional)', hintStyle: TextStyle(color: Colors.white60)),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _submitRating,
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.orange),
+                        child: const Text('SUBMIT RATING'),
+                      ),
+                    ] else
+                      const Text('Thank you for your feedback!', style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 20),
+                    TextButton(
+                      onPressed: widget.onClose,
+                      child: const Text('BACK TO HOME', style: TextStyle(color: Colors.white)),
+                    )
+                  ],
+                ),
               ),
             );
           }
@@ -310,21 +356,25 @@ class _ActiveRequestScreen extends StatelessWidget {
                   const Icon(Icons.local_taxi, color: Colors.white, size: 80),
                   const SizedBox(height: 32),
                   Text(
-                    status == 'Accepted' ? 'Driver is on the way!' : 'Finding a driver...',
+                    _getStatusMsg(status),
+                    textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  if (status == 'Accepted') ...[
-                    Text('Driver: ${data['driverName'] ?? 'Assigned'}', style: const TextStyle(color: Colors.white70)),
+                  if (data['driverName'] != null) ...[
+                    Text('Driver: ${data['driverName']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     Text('Phone: ${data['driverPhone'] ?? 'N/A'}', style: const TextStyle(color: Colors.white70)),
                   ],
                   const SizedBox(height: 48),
                   const LinearProgressIndicator(color: Colors.white, backgroundColor: Colors.white24),
                   const SizedBox(height: 48),
-                  TextButton(
-                    onPressed: () => FirebaseFirestore.instance.collection('taxi_requests').doc(requestId).delete().then((_) => onClose()),
-                    child: const Text('CANCEL REQUEST', style: TextStyle(color: Colors.white70)),
-                  ),
+                  Text('From: ${data['pickup']}\nTo: ${data['destination']}', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+                  const Spacer(),
+                  if (status == 'Pending' || status == 'Driver Assigned')
+                    TextButton(
+                      onPressed: () => FirebaseFirestore.instance.collection('taxi_requests').doc(widget.requestId).update({'status': 'Cancelled'}).then((_) => widget.onClose()),
+                      child: const Text('CANCEL REQUEST', style: TextStyle(color: Colors.white70)),
+                    ),
                 ],
               ),
             ),
@@ -332,5 +382,28 @@ class _ActiveRequestScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _getStatusMsg(String status) {
+    switch (status) {
+      case 'Pending': return 'Finding your driver...';
+      case 'Driver Assigned': return 'Driver is on the way!';
+      case 'Driver Arrived': return 'Driver has arrived at pickup!';
+      case 'Trip Started': return 'Enjoy your trip!';
+      default: return status;
+    }
+  }
+
+  void _submitRating() async {
+    final user = Provider.of<custom_auth.AuthProvider>(context, listen: false).userModel;
+    await FirebaseFirestore.instance.collection('taxi_ratings').add({
+      'requestId': widget.requestId,
+      'userId': user?.uid,
+      'userName': user?.fullName,
+      'rating': _rating.round(),
+      'comment': _commentC.text,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+    setState(() => _submittedRating = true);
   }
 }

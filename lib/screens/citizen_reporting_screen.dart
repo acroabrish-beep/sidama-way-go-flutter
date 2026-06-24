@@ -85,7 +85,7 @@ class _CitizenReportingScreenState extends State<CitizenReportingScreen> {
               ),
               const SizedBox(height: 30),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),

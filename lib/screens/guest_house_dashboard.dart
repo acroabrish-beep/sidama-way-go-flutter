@@ -501,8 +501,9 @@ class _GuestHouseDashboardState extends State<GuestHouseDashboard> {
 
                 bool matchesSearch = guest.contains(_searchQuery);
                 bool matchesFilter = true;
-                if (_resFilter == "Today") matchesFilter = checkIn == today;
-                else if (_resFilter != "All") matchesFilter = status == _resFilter.toLowerCase();
+                if (_resFilter == "Today") {
+                  matchesFilter = checkIn == today;
+                } else if (_resFilter != "All") matchesFilter = status == _resFilter.toLowerCase();
 
                 return matchesSearch && matchesFilter;
               }).toList();
@@ -659,13 +660,13 @@ class _GuestHouseDashboardState extends State<GuestHouseDashboard> {
                 TextField(controller: guestC, decoration: const InputDecoration(labelText: "Guest Name")),
                 TextField(controller: phoneC, decoration: const InputDecoration(labelText: "Phone")),
                 DropdownButtonFormField<String>(
-                  value: selectedGH,
+                  initialValue: selectedGH,
                   items: houses.map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 10)))).toList(),
                   onChanged: (v) => setDState(() => selectedGH = v),
                   decoration: const InputDecoration(labelText: "Guest House"),
                 ),
                 DropdownButtonFormField<String>(
-                  value: selectedRoom,
+                  initialValue: selectedRoom,
                   items: ["Single", "Double", "Family"].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                   onChanged: (v) => setDState(() => selectedRoom = v!),
                   decoration: const InputDecoration(labelText: "Room Type"),
@@ -674,7 +675,7 @@ class _GuestHouseDashboardState extends State<GuestHouseDashboard> {
                 TextField(controller: checkOutC, decoration: const InputDecoration(labelText: "Check-out (YYYY-MM-DD)")),
                 TextField(controller: priceC, decoration: const InputDecoration(labelText: "Total Price"), keyboardType: TextInputType.number),
                 DropdownButtonFormField<String>(
-                  value: selectedPay,
+                  initialValue: selectedPay,
                   items: ["Telebirr", "CBE Birr", "Cash"].map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
                   onChanged: (v) => setDState(() => selectedPay = v!),
                   decoration: const InputDecoration(labelText: "Payment Method"),
@@ -773,7 +774,7 @@ class _GuestHouseDashboardState extends State<GuestHouseDashboard> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
-                  value: selectedGH,
+                  initialValue: selectedGH,
                   items: houses.map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 10)))).toList(),
                   onChanged: (v) => setDState(() => selectedGH = v),
                   decoration: const InputDecoration(labelText: "Guest House"),
@@ -830,7 +831,7 @@ class _GuestHouseDashboardState extends State<GuestHouseDashboard> {
         const Card(
           color: Color(0xFFE0F2F1),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             child: Row(
               children: [
                 Icon(Icons.psychology, color: Colors.teal),

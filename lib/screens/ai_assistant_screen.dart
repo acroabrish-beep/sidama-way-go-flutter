@@ -123,61 +123,61 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
       responses = {
         'en': "I can help you book a bus ticket! Go to Bus Terminal, select Old or New Terminal, choose your route (Hawassa to Addis Ababa, Shashamane, Dilla, etc), pick a bus and seat, then pay via Telebirr or CBE Birr.",
         'am': "የአውቶቡስ ቲኬት እንዲይዙ መርዳት እችላለሁ! ወደ አውቶቡስ ተርሚናል ይሂዱ፣ አሮጌውን ወይም አዲሱን ተርሚናል ይምረጡ፣ መስመርዎን ይምረጡ (ከሀዋሳ ወደ አዲስ አበባ፣ ሻሸመኔ፣ ዲላ ወዘተ)፣ አውቶቡስ እና መቀመጫ ይምረጡ፣ ከዚያ በቴሌብር ወይም በሲቢኢ ብር ይክፈሉ።",
-        'sid': "Busete tikete qixxeessate kaa'lotto! Busete terminaale ha\'ri, hunsicho woy haaricho terminaale doori, doogote ogoro (Hawaasi Addis Ababara, Shashemenera, Dillara, w.k.l) doori, busenna maccishsho doori, hakkiinni Telebirrenni woy CBE Birrenni kaffali.",
+        'sid': "Busete tikete qixxeessate kaa'lotto! Busete terminaale ha'ri, hunsicho woy haaricho terminaale doori, doogote ogoro (Hawaasi Addis Ababara, Shashemenera, Dillara, w.k.l) doori, busenna maccishsho doori, hakkiinni Telebirrenni woy CBE Birrenni kaffali.",
       };
     } else if (q.contains("taxi") || q.contains("ታክሲ") || q.contains("taaksii")) {
       responses = {
         'en': "For city taxi, go to City Taxi section. Routes include Piassa, Menaharia, Tabor, Gudumale and more, with fares from 6-15 ETB.",
         'am': "ለከተማ ታክሲ ወደ የከተማ ታክሲ ክፍል ይሂዱ። መስመሮች ፒያሳ፣ መናኸሪያ፣ ታቦር፣ ጉዱማሌ እና ሌሎችንም ያካትታሉ፣ ከ6-15 ብር ዋጋ ጋር።",
-        'sid': "Katama taaksii hasi\'rattoha irose, Katama Taaksii qixxaawo ha\'ri. Doogote ogoro Piassa, Menaharia, Tabor, Gudumale nna wolootta daggino, waagi 6-15 ETB hee\'runni.",
+        'sid': "Katama taaksii hasi'rattoha irose, Katama Taaksii qixxaawo ha'ri. Doogote ogoro Piassa, Menaharia, Tabor, Gudumale nna wolootta daggino, waagi 6-15 ETB hee'runni.",
       };
     } else if (q.contains("hotel") || q.contains("ሆቴል") || q.contains("hotel")) {
       responses = {
         'en': "You can search hotels in the Hotel section. Haile Resort and Lewi Hotel are popular options near Lake Hawassa.",
         'am': "በሆቴል ክፍል ውስጥ ሆቴሎችን መፈለግ ይችላሉ። ሀይሌ ሪዞርት እና ሌዊ ሆቴል በሀዋሳ ሐይቅ አቅራቢያ ተወዳጅ አማራጮች ናቸው።",
-        'sid': "Hotelubba Hotelu qixxaawo giddo hasi\'ra dandiitto. Haile Resort nna Lewi Hotelu Hawaasa Baari baaxira daggino doorubbaati.",
+        'sid': "Hotelubba Hotelu qixxaawo giddo hasi'ra dandiitto. Haile Resort nna Lewi Hotelu Hawaasa Baari baaxira daggino doorubbaati.",
       };
     } else if (q.contains("pharmacy") || q.contains("ፋርማሲ") || q.contains("medicine") || q.contains("xalle")) {
       responses = {
         'en': "For pharmacy services, check the Pharmacy section to search medicines and place orders.",
         'am': "ለፋርማሲ አገልግሎቶች መድሃኒቶችን ለመፈለግ እና ትዕዛዝ ለመስጠት የፋርማሲውን ክፍል ይመልከቱ።",
-        'sid': "Xallote soqansiwa, Xallote qixxaawo giddo xalle hasi\'ranna sokka dandiitto.",
+        'sid': "Xallote soqansiwa, Xallote qixxaawo giddo xalle hasi'ranna sokka dandiitto.",
       };
     } else if (q.contains("hospital") || q.contains("ሆስፒታል") || q.contains("health") || q.contains("hospitaale")) {
       responses = {
         'en': "For hospital information, visit the Hospital section. In emergencies, use the red Emergency button for instant help.",
         'am': "ለሆስፒታል መረጃ የሆስፒታሉን ክፍል ይጎብኙ። በድንገተኛ ጊዜ፣ ለአፋጣኝ እርዳታ ቀይ የድንገተኛ ጊዜ ቁልፍን ይጠቀሙ።",
-        'sid': "Hospitaale daggino mashalaqqe, Hospitaale qixxaawo la\'i. Dawicho ikkiro, kaa\'lo afate xiraacho Dawicho butoone kishshi.",
+        'sid': "Hospitaale daggino mashalaqqe, Hospitaale qixxaawo la'i. Dawicho ikkiro, kaa'lo afate xiraacho Dawicho butoone kishshi.",
       };
     } else if (q.contains("emergency") || q.contains("help") || q.contains("ድንገተኛ") || q.contains("dawicho")) {
       responses = {
         'en': "For emergencies, tap the red Emergency button on the home screen. You can request Ambulance, Police, Fire Department, or Road Emergency assistance.",
         'am': "ለድንገተኛ አደጋዎች በዋናው ስክሪን ላይ ያለውን ቀይ የድንገተኛ አደጋ ቁልፍ ይጫኑ። አምቡላንስ፣ ፖሊስ፣ የእሳት አደጋ መከላከያ ወይም የመንገድ ላይ ድንገተኛ እርዳታ መጠየቅ ይችላሉ።",
-        'sid': "Dawicho ikkiro, mine skrine aana noo xiraacho Dawicho butoone kishshi. Ambulaanse, Poolise, Gidira xibbiwa, woy doogote dawicho kaa\'lo xa\'ma dandiitto.",
+        'sid': "Dawicho ikkiro, mine skrine aana noo xiraacho Dawicho butoone kishshi. Ambulaanse, Poolise, Gidira xibbiwa, woy doogote dawicho kaa'lo xa'ma dandiitto.",
       };
     } else if (q.contains("tourist") || q.contains("tourism") || q.contains("ቱሪስት") || q.contains("visit") || q.contains("tuuristi")) {
       responses = {
         'en': "Hawassa has amazing tourist spots! Visit Hawassa Lake & Amora Gedel for birds and fresh fish, Tabor Mountain for hiking, Gudumale Cultural Center, and Millennium Park.",
         'am': "ሀዋሳ አስደናቂ የቱሪስት ቦታዎች አሏት! ለአእዋፍ እና ትኩስ ዓሳ የሀዋሳ ሐይቅን እና አሞራ ገደልን ይጎብኙ፣ ታቦር ተራራን ለእግር ጉዞ፣ ጉዱማሌ የባህል ማዕከልን እና ሚሊኒየም ፓርክን ይጎብኙ።",
-        'sid': "Hawaasa dhagga daggino tuuristete bayicho daggino! Hawaasa Baarinna Amora Gedel cironna haaricho qulxume la\'ate ha\'ri, Taboru tura hiraase hasi\'rateno, Gudumale mawaate giddo, nna Millennium Parki ha\'ri.",
+        'sid': "Hawaasa dhagga daggino tuuristete bayicho daggino! Hawaasa Baarinna Amora Gedel cironna haaricho qulxume la'ate ha'ri, Taboru tura hiraase hasi'rateno, Gudumale mawaate giddo, nna Millennium Parki ha'ri.",
       };
     } else if (q.contains("eco") || q.contains("shine")) {
       responses = {
         'en': "Eco-Shine stations offer solar-powered shoe shining with water recycling and free USB charging. Find them at Piazza and Hawassa University.",
         'am': "የኢኮ-ሻይን ጣቢያዎች በፀሐይ ኃይል የሚሰራ የጫማ ቀለም ከውሃ መልሶ ጥቅም ላይ ማዋል እና ነፃ የዩኤስቢ ኃይል መሙላት ጋር ይሰጣሉ። በፒያሳ እና በሀዋሳ ዩኒቨርሲቲ ያገኟቸዋል።",
-        'sid': "Eco-Shine soqansiwa harricho huxxunni soqantanno nna USB shaaje assateno kaa\'litanno. Piazza nna Hawaasa Yuunibersiite giddo hasi\'ra dandiitto.",
+        'sid': "Eco-Shine soqansiwa harricho huxxunni soqantanno nna USB shaaje assateno kaa'litanno. Piazza nna Hawaasa Yuunibersiite giddo hasi'ra dandiitto.",
       };
     } else if (q.contains("announcement") || q.contains("news") || q.contains("ማስታወቂያ") || q.contains("sokka")) {
       responses = {
         'en': "Check the Announcements section for the latest city news and updates.",
         'am': "የቅርብ ጊዜ የከተማ ዜናዎችን እና ዝመናዎችን ለማግኘት የማስታወቂያ ክፍሉን ይመልከቱ።",
-        'sid': "Sokka qixxaawo giddo haaricho katama mashalaqqe nna lede la\'i.",
+        'sid': "Sokka qixxaawo giddo haaricho katama mashalaqqe nna lede la'i.",
       };
     } else {
       responses = {
         'en': "I'm your SIDAMA WAY GO assistant! I can help with bus tickets, taxi rides, hotels, pharmacy, hospitals, emergency services, and tourist information. What would you like to know?",
         'am': "እኔ የሲዳማ ዌይ ጎ ረዳትዎ ነኝ! በአውቶቡስ ቲኬቶች፣ በታክሲ ጉዞዎች፣ በሆቴሎች፣ በፋርማሲ፣ በሆስፒታሎች፣ በድንገተኛ አደጋ አገልግሎቶች እና በቱሪስት መረጃዎች መርዳት እችላለሁ። ምን ማወቅ ይፈልጋሉ?",
-        'sid': "SIDAMA WAY GO kaa\'laanchoho! Busete tikete, taaksite, hotelu, xallote, hospitaale, dawicho soqansiwa, nna tuuristete mashalaqqenni kaa\'lo dandiioommo. Ma afa hasi\'ratto?",
+        'sid': "SIDAMA WAY GO kaa'laanchoho! Busete tikete, taaksite, hotelu, xallote, hospitaale, dawicho soqansiwa, nna tuuristete mashalaqqenni kaa'lo dandiioommo. Ma afa hasi'ratto?",
       };
     }
 

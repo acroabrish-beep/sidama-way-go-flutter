@@ -74,7 +74,7 @@ class _AnnouncementDashboardState extends State<AnnouncementDashboard> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 dropdownColor: const Color(0xFF1A237E),
                 decoration: const InputDecoration(
                   labelText: 'Category',

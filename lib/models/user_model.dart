@@ -10,6 +10,7 @@ enum UserRole {
   health_admin,
   pharmacy_admin,
   emergency_admin,
+  church_admin,
   citizen
 }
 

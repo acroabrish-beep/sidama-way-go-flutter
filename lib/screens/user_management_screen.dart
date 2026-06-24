@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
-import '../widgets/glass_card.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});

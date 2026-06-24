@@ -82,16 +82,24 @@ class SuperAdminDashboard extends StatelessWidget {
     double total = 0;
 
     final b = await FirebaseFirestore.instance.collection('bookings').get();
-    for (var d in b.docs) total += (d['fare'] ?? 0).toDouble();
+    for (var d in b.docs) {
+      total += (d['fare'] ?? 0).toDouble();
+    }
 
     final t = await FirebaseFirestore.instance.collection('taxi_payments').get();
-    for (var d in t.docs) total += (d['amount'] ?? 0).toDouble();
+    for (var d in t.docs) {
+      total += (d['amount'] ?? 0).toDouble();
+    }
 
     final h = await FirebaseFirestore.instance.collection('hotel_reservations').get();
-    for (var d in h.docs) total += (d['totalPrice'] ?? 0).toDouble();
+    for (var d in h.docs) {
+      total += (d['totalPrice'] ?? 0).toDouble();
+    }
 
     final f = await FirebaseFirestore.instance.collection('food_orders').get();
-    for (var d in f.docs) total += (d['totalPrice'] ?? 0).toDouble();
+    for (var d in f.docs) {
+      total += (d['totalPrice'] ?? 0).toDouble();
+    }
 
     return total;
   }
@@ -159,7 +167,9 @@ class SuperAdminDashboard extends StatelessWidget {
       final b = await FirebaseFirestore.instance.collection('bookings')
           .where('createdAt', isGreaterThanOrEqualTo: start)
           .where('createdAt', isLessThan: end).get();
-      for (var d in b.docs) dailyTotal += (d['fare'] ?? 0).toDouble();
+      for (var d in b.docs) {
+        dailyTotal += (d['fare'] ?? 0).toDouble();
+      }
 
       spots.add(FlSpot((6 - i).toDouble(), dailyTotal / 1000)); // Normalized for chart
     }

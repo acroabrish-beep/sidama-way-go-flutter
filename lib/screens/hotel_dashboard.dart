@@ -11,6 +11,11 @@ class HotelDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DashboardBase(
       title: 'Hotel Admin',
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CRUDListScreen(collection: 'hotels', title: 'Hotels', fields: ['name', 'location', 'rating', 'description']))),
+        backgroundColor: Colors.purpleAccent,
+        child: const Icon(Icons.add_home, color: Colors.white),
+      ),
       children: [
         _buildSummary(),
         const SizedBox(height: 24),
@@ -21,11 +26,6 @@ class HotelDashboard extends StatelessWidget {
         const SizedBox(height: 16),
         _buildBookingList(),
       ],
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CRUDListScreen(collection: 'hotels', title: 'Hotels', fields: ['name', 'location', 'rating', 'description']))),
-        backgroundColor: Colors.purpleAccent,
-        child: const Icon(Icons.add_home, color: Colors.white),
-      ),
     );
   }
 

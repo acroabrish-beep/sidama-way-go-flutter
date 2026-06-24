@@ -60,8 +60,9 @@ class LocationProvider with ChangeNotifier {
         Color color = Colors.red;
         String type = loc['type'] ?? 'unknown';
 
-        if (type == 'taxi') color = Colors.yellow;
-        else if (type == 'bus') color = Colors.blue;
+        if (type == 'taxi') {
+          color = Colors.yellow;
+        } else if (type == 'bus') color = Colors.blue;
         else if (type == 'hotel') color = Colors.green;
         else if (type == 'pharmacy') color = Colors.pink;
         else if (type == 'hospital') color = Colors.red;

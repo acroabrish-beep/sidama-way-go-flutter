@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final lang = Provider.of<LanguageProvider>(context);
 
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       const _MainHub(),
       const TerminalScreen(),
       const FoodScreen(),
@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),

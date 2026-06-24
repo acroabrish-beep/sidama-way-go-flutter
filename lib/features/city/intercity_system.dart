@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../providers/city_platform_provider.dart';
 import '../../models/city_platform_models.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:intl/intl.dart';
 
 class IntercitySystemScreen extends StatefulWidget {
   const IntercitySystemScreen({super.key});

@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../models/ai_message.dart';
 import '../utils/language_provider.dart';
 
-import '../services/smart_services.dart';
 
 import '../services/firestore_service.dart';
 import '../models/city_os_models.dart';

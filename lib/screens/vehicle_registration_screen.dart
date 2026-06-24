@@ -68,7 +68,7 @@ class _VehicleRegistrationScreenState extends State<VehicleRegistrationScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
-                      value: _vehicleType,
+                      initialValue: _vehicleType,
                       decoration: const InputDecoration(labelText: 'Vehicle Type', border: OutlineInputBorder()),
                       items: ['City Taxi', 'Minibus', 'Intercity Bus']
                           .map((t) => DropdownMenuItem(value: t, child: Text(t)))

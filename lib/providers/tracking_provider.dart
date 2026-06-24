@@ -5,7 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 class TrackingProvider with ChangeNotifier {
-  LatLng? _currentPosition = const LatLng(7.0504, 38.4955); // Hawassa Default
+  final LatLng? _currentPosition = const LatLng(7.0504, 38.4955); // Hawassa Default
   final List<Marker> _markers = [];
   final List<Polyline> _polylines = [];
   bool _isTracking = false;
