@@ -5,6 +5,7 @@ import '../models/user_model.dart';
 import '../screens/splash_screen.dart';
 import '../screens/user_management_screen.dart';
 import '../screens/crud_list_screen.dart';
+import '../screens/ai_assistant_screen.dart';
 
 class DashboardBase extends StatelessWidget {
   final String title;
@@ -34,6 +35,11 @@ class DashboardBase extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           ...?actions,
+          IconButton(
+            icon: const Icon(Icons.smart_toy_outlined),
+            tooltip: 'Ask AI',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen())),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {

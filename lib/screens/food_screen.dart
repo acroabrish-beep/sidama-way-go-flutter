@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'ai_assistant_screen.dart';
 
 class FoodScreen extends StatefulWidget {
   const FoodScreen({super.key});
@@ -187,6 +188,12 @@ class _FoodScreenState extends State<FoodScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen())),
+        backgroundColor: const Color(0xFFAD1457),
+        icon: const Icon(Icons.smart_toy, color: Colors.white),
+        label: const Text('Ask AI', style: TextStyle(color: Colors.white)),
       ),
     );
   }

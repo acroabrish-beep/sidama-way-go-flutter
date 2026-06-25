@@ -9,7 +9,7 @@ import 'smart_city_map_screen.dart';
 import 'profile_screen.dart';
 import 'city_taxi_screen.dart';
 import 'emergency_screen.dart';
-import 'tourist_screen.dart';
+import 'tourism/tourism_home_screen.dart';
 import 'healthcare_screen.dart';
 import 'pharmacy_screen.dart';
 import 'food_screen.dart';
@@ -41,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const _MainHub(),
       const TerminalScreen(),
       const FoodScreen(),
-      const TouristScreen(),
+      const TourismHomeScreen(),
       const ProfileScreen(),
     ];
 
@@ -85,7 +85,7 @@ class _MainHub extends StatelessWidget {
       {'title': lang.t('bus_terminal'), 'icon': Icons.directions_bus_filled, 'color': 0xFF1565C0, 'screen': const TerminalScreen()},
       {'title': lang.t('city_taxi'), 'icon': Icons.local_taxi, 'color': 0xFFE65100, 'screen': const CityTaxiScreen()},
       {'title': lang.t('emergency'), 'icon': Icons.emergency, 'color': 0xFFC62828, 'screen': const EmergencyScreen()},
-      {'title': lang.t('tourist_guide'), 'icon': Icons.map, 'color': 0xFF00897B, 'screen': const TouristScreen()},
+      {'title': lang.t('tourist_guide'), 'icon': Icons.map, 'color': 0xFF00897B, 'screen': const TourismHomeScreen()},
       {'title': 'Hotels', 'icon': Icons.hotel, 'color': 0xFF6A1B9A, 'screen': const HotelScreen()},
       {'title': lang.t('healthcare'), 'icon': Icons.local_hospital, 'color': 0xFFD32F2F, 'screen': const HealthcareScreen()},
       {'title': lang.t('pharmacy'), 'icon': Icons.local_pharmacy, 'color': 0xFF388E3C, 'screen': const PharmacyScreen()},

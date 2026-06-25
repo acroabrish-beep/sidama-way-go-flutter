@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'ai_assistant_screen.dart';
 
 class PharmacyScreen extends StatefulWidget {
   const PharmacyScreen({super.key});
@@ -45,6 +46,12 @@ class _PharmacyScreenState extends State<PharmacyScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen())),
+        backgroundColor: Colors.green,
+        icon: const Icon(Icons.smart_toy, color: Colors.white),
+        label: const Text('Ask AI', style: TextStyle(color: Colors.white)),
       ),
     );
   }

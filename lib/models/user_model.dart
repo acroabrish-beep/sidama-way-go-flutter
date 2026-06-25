@@ -11,6 +11,7 @@ enum UserRole {
   pharmacy_admin,
   emergency_admin,
   church_admin,
+  taxi_driver,
   citizen
 }
 

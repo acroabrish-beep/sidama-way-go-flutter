@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import 'package:provider/provider.dart';
 import '../utils/language_provider.dart';
+import 'ai_assistant_screen.dart';
 
 enum TerminalStep {
   selectTerminal,
@@ -146,6 +147,12 @@ class _TerminalScreenState extends State<TerminalScreen> {
         foregroundColor: Colors.white,
       ),
       body: _buildStepContent(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen())),
+        backgroundColor: const Color(0xFF1B5E20),
+        icon: const Icon(Icons.smart_toy, color: Colors.white),
+        label: const Text('Ask AI', style: TextStyle(color: Colors.white)),
+      ),
     );
   }
 
