@@ -25,10 +25,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   final _idC = TextEditingController();
 
   String _vehicleType = 'Standard';
-  String _selectedStation = 'Piassa';
+  TaxiStation? _selectedStation;
   bool _isLoading = false;
-
-  final List<String> _stations = ['Piassa', 'Menaharia', 'Menbo', 'University', 'Tabor', 'Hawela Tula', 'Alamura'];
 
   @override
   Widget build(BuildContext context) {
@@ -70,11 +68,21 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                     onChanged: (v) => setState(() => _vehicleType = v!),
                   ),
                   const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: _selectedStation,
-                    decoration: const InputDecoration(labelText: 'Preferred Taxi Station', prefixIcon: Icon(Icons.place)),
-                    items: _stations.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                    onChanged: (v) => setState(() => _selectedStation = v!),
+                  StreamBuilder<List<TaxiStation>>(
+                    stream: _taxiService.getTaxiStations(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const LinearProgressIndicator();
+                      final stations = snapshot.data!;
+                      if (_selectedStation == null && stations.isNotEmpty) {
+                        _selectedStation = stations.first;
+                      }
+                      return DropdownButtonFormField<TaxiStation>(
+                        value: _selectedStation,
+                        decoration: const InputDecoration(labelText: 'Preferred Taxi Station', prefixIcon: Icon(Icons.place)),
+                        items: stations.map((s) => DropdownMenuItem(value: s, child: Text(s.name))).toList(),
+                        onChanged: (v) => setState(() => _selectedStation = v),
+                      );
+                    }
                   ),
 
                   const SizedBox(height: 32),
@@ -122,6 +130,10 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
 
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedStation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a station')));
+      return;
+    }
 
     setState(() => _isLoading = true);
     try {
@@ -141,7 +153,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
         vehicleModel: _modelC.text,
         vehicleColor: _colorC.text,
         vehicleType: _vehicleType,
-        station: _selectedStation,
+        station: _selectedStation!.name,
+        stationId: _selectedStation!.id,
         status: DriverStatus.pending,
         taxiStatus: TaxiStatus.offline,
         isOnline: false,

@@ -187,12 +187,13 @@ class _LiveMapTab extends StatelessWidget {
         TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance.collection('drivers')
-              .where('status', isEqualTo: 'approved')
-              .where('isOnline', isEqualTo: true)
+              .where('status', isEqualTo: 'APPROVED')
               .snapshots(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) return const MarkerLayer(markers: []);
-            final markers = snapshot.data!.docs.map((doc) {
+            // Filter isOnline in Dart to avoid composite index
+            final docs = snapshot.data!.docs.where((doc) => (doc.data() as Map)['isOnline'] == true).toList();
+            final markers = docs.map((doc) {
               final d = doc.data() as Map<String, dynamic>;
               final loc = d['location'] as GeoPoint?;
               return Marker(
@@ -230,8 +231,8 @@ class _VerificationTab extends StatelessWidget {
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => drivers[i].reference.update({'status': 'approved'})),
-                      IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () => drivers[i].reference.update({'status': 'rejected'})),
+                      IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => drivers[i].reference.update({'status': 'APPROVED'})),
+                      IconButton(icon: const Icon(Icons.cancel, color: Colors.red), onPressed: () => drivers[i].reference.update({'status': 'REJECTED'})),
                     ],
                   )
                 : const Icon(Icons.verified, color: Colors.blue),
@@ -318,14 +319,14 @@ class _StationAnalyticsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('drivers')
-          .where('station', isEqualTo: name)
+          .where('stationId', isEqualTo: docId)
           .snapshots(),
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
         final total = docs.length;
-        final approved = docs.where((d) => d['status'] == 'approved').length;
-        final online = docs.where((d) => d['status'] == 'approved' && d['isOnline'] == true).length;
-        final busy = docs.where((d) => d['status'] == 'approved' && d['taxiStatus'] == 'busy').length;
+        final approved = docs.where((d) => d['status'] == 'APPROVED').length;
+        final online = docs.where((d) => d['status'] == 'APPROVED' && d['isOnline'] == true).length;
+        final busy = docs.where((d) => d['status'] == 'APPROVED' && d['taxiStatus'] == 'busy').length;
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16),

@@ -55,28 +55,65 @@ class TaxiService {
 
   // Update Live Location and Station
   Future<void> updateDriverLocation(String driverId, Position position, String zone) async {
+    // Find station ID for the detected zone
+    final stationSnap = await _db.collection('taxi_stations').where('name', isEqualTo: zone).limit(1).get();
+    String? stationId;
+    if (stationSnap.docs.isNotEmpty) {
+      stationId = stationSnap.docs.first.id;
+    }
+
     await _db.collection('drivers').doc(driverId).update({
       'location': GeoPoint(position.latitude, position.longitude),
       'currentZone': zone,
       'station': zone, // Map zone to station
+      if (stationId != null) 'stationId': stationId,
       'lastUpdate': FieldValue.serverTimestamp(),
     });
   }
 
+  // Fix null stationId for existing drivers
+  Future<void> fixMissingStationIds() async {
+    final snap = await _db.collection('drivers').where('stationId', isNull: true).get();
+    final stationsSnap = await _db.collection('taxi_stations').get();
+    final stationsMap = {for (var doc in stationsSnap.docs) doc['name'] as String: doc.id};
+
+    for (var doc in snap.docs) {
+      final stationName = doc['station'] as String? ?? 'Piassa';
+      final stationId = stationsMap[stationName] ?? (stationsMap.isNotEmpty ? stationsMap.values.first : 'general');
+      final currentStatus = doc['status'] as String? ?? 'pending';
+
+      await doc.reference.update({
+        'stationId': stationId,
+        if (currentStatus == 'approved') 'status': 'APPROVED',
+      });
+    }
+  }
+
+  // Get All Taxi Stations
+  Stream<List<TaxiStation>> getTaxiStations() {
+    return _db.collection('taxi_stations').snapshots().map((snap) {
+      return snap.docs.map((doc) => TaxiStation.fromFirestore(doc)).toList();
+    });
+  }
+
   // Active Driver Count for a Station
-  Stream<int> getActiveDriverCount(String stationName) {
+  Stream<int> getActiveDriverCount(String stationId) {
     return _db.collection('drivers')
-        .where('station', isEqualTo: stationName)
-        .where('status', isEqualTo: 'approved')
-        .where('isOnline', isEqualTo: true)
+        .where('stationId', isEqualTo: stationId)
         .snapshots()
-        .map((snap) => snap.docs.length);
+        .map((snap) {
+          // Filter in Dart to avoid index requirement
+          return snap.docs.where((doc) {
+            final data = doc.data();
+            return data['status'] == 'APPROVED' && data['isOnline'] == true;
+          }).length;
+        });
   }
 
   // Passenger: Find nearby approved online drivers
   Stream<List<TaxiDriver>> getNearbyDrivers(GeoPoint userLoc) {
     return _db.collection('drivers')
-        .where('status', isEqualTo: 'approved')
+        .where('status', isEqualTo: 'APPROVED')
         .where('isOnline', isEqualTo: true)
         .snapshots()
         .map((snap) {
@@ -93,21 +130,28 @@ class TaxiService {
   }
 
   // Ride Requests
-  Future<String> requestSmartTaxi(RideRequest request) async {
-    // 1. Find nearest driver
+  Future<String> requestSmartTaxi(RideRequest request, String stationId) async {
+    // 1. Find nearest driver in the selected station
+    // Simplified query to avoid index requirement
     final driversSnap = await _db.collection('drivers')
-        .where('status', isEqualTo: 'approved')
-        .where('isOnline', isEqualTo: true)
-        .where('taxiStatus', isEqualTo: 'online')
+        .where('stationId', isEqualTo: stationId)
         .get();
 
-    if (driversSnap.docs.isEmpty) throw 'No active drivers available nearby.';
+    // Filter in Dart
+    final eligibleDrivers = driversSnap.docs.where((doc) {
+      final data = doc.data();
+      return data['status'] == 'APPROVED' &&
+             data['isOnline'] == true &&
+             data['taxiStatus'] == 'online';
+    }).toList();
+
+    if (eligibleDrivers.isEmpty) throw 'No active drivers available at this station.';
 
     DocumentSnapshot? nearestDriverDoc;
     double minDistance = double.infinity;
 
-    for (var doc in driversSnap.docs) {
-      final loc = doc['location'] as GeoPoint?;
+    for (var doc in eligibleDrivers) {
+      final loc = doc.data()['location'] as GeoPoint?;
       if (loc != null) {
         double dist = Geolocator.distanceBetween(request.pickupLocation.latitude, request.pickupLocation.longitude, loc.latitude, loc.longitude);
         if (dist < minDistance) {

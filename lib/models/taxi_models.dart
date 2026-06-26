@@ -17,6 +17,7 @@ class TaxiDriver {
   final String vehicleColor;
   final String vehicleType;
   final String station;
+  final String? stationId;
   final DriverStatus status;
   final TaxiStatus taxiStatus;
   final bool isOnline; // Explicitly requested field
@@ -39,6 +40,7 @@ class TaxiDriver {
     required this.vehicleColor,
     required this.vehicleType,
     required this.station,
+    this.stationId,
     required this.status,
     required this.taxiStatus,
     this.isOnline = false,
@@ -64,7 +66,11 @@ class TaxiDriver {
       vehicleColor: data['vehicleColor'] ?? '',
       vehicleType: data['vehicleType'] ?? '',
       station: data['station'] ?? 'Unknown',
-      status: DriverStatus.values.firstWhere((e) => e.toString().split('.').last == data['status'], orElse: () => DriverStatus.pending),
+      stationId: data['stationId'],
+      status: DriverStatus.values.firstWhere(
+        (e) => e.toString().split('.').last.toLowerCase() == (data['status'] as String? ?? '').toLowerCase(),
+        orElse: () => DriverStatus.pending,
+      ),
       taxiStatus: TaxiStatus.values.firstWhere((e) => e.toString().split('.').last == data['taxiStatus'], orElse: () => TaxiStatus.offline),
       isOnline: data['isOnline'] ?? false,
       rating: (data['rating'] ?? 5.0).toDouble(),
@@ -88,7 +94,8 @@ class TaxiDriver {
       'vehicleColor': vehicleColor,
       'vehicleType': vehicleType,
       'station': station,
-      'status': status.toString().split('.').last,
+      'stationId': stationId,
+      'status': status.toString().split('.').last.toUpperCase(), // To match user request 'APPROVED'
       'taxiStatus': taxiStatus.toString().split('.').last,
       'isOnline': isOnline,
       'rating': rating,
