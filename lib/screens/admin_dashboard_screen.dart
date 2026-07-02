@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'vehicle_registration_screen.dart';
 import 'mobility/driver_registration_screen.dart';
 import 'admin_location_dashboard.dart';
+import '../models/taxi_models.dart';
+import '../services/taxi_service.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -51,31 +53,26 @@ class _TaxiStationsTab extends StatefulWidget {
 class _TaxiStationsTabState extends State<_TaxiStationsTab> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _descController = TextEditingController();
   final _capacityController = TextEditingController();
-  String _selectedZone = 'Zone 1';
+  final _taxiService = TaxiService();
 
   @override
   void dispose() {
     _nameController.dispose();
-    _descController.dispose();
     _capacityController.dispose();
     super.dispose();
   }
 
   void _addStation() async {
     if (_formKey.currentState!.validate()) {
-      await FirebaseFirestore.instance.collection('taxi_stations').add({
-        'name': _nameController.text,
-        'description': _descController.text,
-        'zone': _selectedZone,
-        'maxCapacity': int.tryParse(_capacityController.text) ?? 10,
-        'isActive': true,
-        'currentTaxis': 0,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _taxiService.saveStation(TaxiStation(
+        id: '',
+        name: _nameController.text,
+        location: const GeoPoint(7.0504, 38.4955),
+        capacity: int.tryParse(_capacityController.text) ?? 10,
+        status: 'Active',
+      ));
       _nameController.clear();
-      _descController.clear();
       _capacityController.clear();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Station added!')));
@@ -104,32 +101,12 @@ class _TaxiStationsTabState extends State<_TaxiStationsTab> {
                       decoration: const InputDecoration(labelText: 'Station Name'),
                       validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
+                    const SizedBox(height: 12),
                     TextFormField(
-                      controller: _descController,
-                      decoration: const InputDecoration(labelText: 'Location Description'),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _selectedZone,
-                            decoration: const InputDecoration(labelText: 'Zone'),
-                            items: ['Zone 1', 'Zone 2', 'Zone 3', 'Zone 4']
-                                .map((z) => DropdownMenuItem(value: z, child: Text(z)))
-                                .toList(),
-                            onChanged: (v) => setState(() => _selectedZone = v!),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _capacityController,
-                            decoration: const InputDecoration(labelText: 'Max Capacity'),
-                            keyboardType: TextInputType.number,
-                            validator: (v) => v!.isEmpty ? 'Required' : null,
-                          ),
-                        ),
-                      ],
+                      controller: _capacityController,
+                      decoration: const InputDecoration(labelText: 'Max Capacity'),
+                      keyboardType: TextInputType.number,
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -147,52 +124,40 @@ class _TaxiStationsTabState extends State<_TaxiStationsTab> {
           const SizedBox(height: 24),
           const Text('Stations List', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection('taxi_stations').orderBy('name').snapshots(),
+          StreamBuilder<List<TaxiStation>>(
+            stream: _taxiService.getTaxiStations(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-              final docs = snapshot.data!.docs;
+              final stations = snapshot.data!;
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: docs.length,
+                itemCount: stations.length,
                 itemBuilder: (context, index) {
-                  final doc = docs[index];
-                  final data = doc.data() as Map<String, dynamic>;
+                  final s = stations[index];
                   return Card(
                     child: ListTile(
-                      title: Text(data['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Row(
                         children: [
-                          Text(data['description'] ?? ''),
-                          Row(
-                            children: [
-                              Chip(label: Text(data['zone'] ?? '', style: const TextStyle(fontSize: 10))),
-                              const SizedBox(width: 8),
-                              Text('Cap: ${data['maxCapacity']}'),
-                              const SizedBox(width: 8),
-                              StreamBuilder<QuerySnapshot>(
-                                stream: FirebaseFirestore.instance.collection('queues').where('station', isEqualTo: data['name']).snapshots(),
-                                builder: (context, qSnap) {
-                                  // Filter in Dart
-                                  final waiting = qSnap.data?.docs.where((d) => (d.data() as Map)['status'] == 'waiting').toList() ?? [];
-                                  return Text('Taxis: ${waiting.length}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold));
-                                },
-                              ),
-                            ],
-                          ),
+                          Text('Cap: ${s.capacity}'),
+                          const SizedBox(width: 16),
+                          Text('Taxis: ${s.activeTaxiCount}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
                         ],
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Switch(
-                            value: data['isActive'] ?? false,
-                            onChanged: (v) => doc.reference.update({'isActive': v}),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: (s.status == 'Active' ? Colors.green : Colors.grey).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(s.status, style: TextStyle(color: s.status == 'Active' ? Colors.green : Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
                           ),
-                          IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _editStation(doc)),
-                          IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteStation(doc)),
+                          IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _editStation(s)),
+                          IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteStation(s.id)),
                         ],
                       ),
                     ),
@@ -206,11 +171,9 @@ class _TaxiStationsTabState extends State<_TaxiStationsTab> {
     );
   }
 
-  void _editStation(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    final nameC = TextEditingController(text: data['name']);
-    final descC = TextEditingController(text: data['description']);
-    final capC = TextEditingController(text: data['maxCapacity'].toString());
+  void _editStation(TaxiStation station) {
+    final nameC = TextEditingController(text: station.name);
+    final capC = TextEditingController(text: station.capacity.toString());
 
     showDialog(
       context: context,
@@ -220,18 +183,19 @@ class _TaxiStationsTabState extends State<_TaxiStationsTab> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(controller: nameC, decoration: const InputDecoration(labelText: 'Name')),
-            TextField(controller: descC, decoration: const InputDecoration(labelText: 'Description')),
             TextField(controller: capC, decoration: const InputDecoration(labelText: 'Capacity'), keyboardType: TextInputType.number),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(onPressed: () async {
-            await doc.reference.update({
-              'name': nameC.text,
-              'description': descC.text,
-              'maxCapacity': int.tryParse(capC.text) ?? 10,
-            });
+            await _taxiService.saveStation(TaxiStation(
+              id: station.id,
+              name: nameC.text,
+              location: station.location,
+              capacity: int.tryParse(capC.text) ?? 10,
+              status: station.status,
+            ));
             if (mounted) Navigator.pop(context);
           }, child: const Text('Save')),
         ],
@@ -239,7 +203,7 @@ class _TaxiStationsTabState extends State<_TaxiStationsTab> {
     );
   }
 
-  void _deleteStation(DocumentSnapshot doc) {
+  void _deleteStation(String id) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -248,7 +212,7 @@ class _TaxiStationsTabState extends State<_TaxiStationsTab> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(onPressed: () async {
-            await doc.reference.delete();
+            await _taxiService.deleteStation(id);
             if (mounted) Navigator.pop(context);
           }, child: const Text('Delete', style: TextStyle(color: Colors.red))),
         ],

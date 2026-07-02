@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../models/taxi_models.dart';
+import '../../services/taxi_service.dart';
 
 class DriverRegistrationScreen extends StatefulWidget {
   const DriverRegistrationScreen({super.key});
@@ -11,14 +13,17 @@ class DriverRegistrationScreen extends StatefulWidget {
 
 class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _taxiService = TaxiService();
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _plateController = TextEditingController();
   final _vehicleColorController = TextEditingController();
   final _licenseController = TextEditingController();
+  final _vehicleModelController = TextEditingController();
 
   String _vehicleType = 'City Taxi';
-  String? _selectedStation;
+  String? _selectedStationName;
+  String? _selectedStationId;
   bool _isSubmitting = false;
 
   @override
@@ -28,12 +33,13 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     _plateController.dispose();
     _vehicleColorController.dispose();
     _licenseController.dispose();
+    _vehicleModelController.dispose();
     super.dispose();
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate() || _selectedStation == null) {
-      if (_selectedStation == null) {
+    if (!_formKey.currentState!.validate() || _selectedStationName == null) {
+      if (_selectedStationName == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select a station')),
         );
@@ -46,34 +52,50 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       final uid = user?.uid ?? '';
-      final timestamp = FieldValue.serverTimestamp();
 
-      // Save to drivers collection
-      await FirebaseFirestore.instance.collection('drivers').doc(uid).set({
-        'fullName': _fullNameController.text,
-        'phone': _phoneController.text,
-        'plateNumber': _plateController.text,
+      final driver = TaxiDriver(
+        id: uid,
+        fullName: _fullNameController.text,
+        phone: _phoneController.text,
+        email: user?.email ?? '',
+        profilePhoto: '',
+        nationalId: '',
+        drivingLicense: _licenseController.text,
+        vehiclePhoto: '',
+        plateNumber: _plateController.text,
+        vehicleModel: _vehicleModelController.text,
+        vehicleColor: _vehicleColorController.text,
+        vehicleType: _vehicleType,
+        station: _selectedStationName!,
+        stationId: _selectedStationId,
+        status: DriverStatus.approved,
+        taxiStatus: TaxiStatus.offline,
+        isOnline: false,
+      );
+
+      await _taxiService.registerDriver(driver);
+
+      // After saving driver to Firestore, also add to queue:
+      await FirebaseFirestore.instance.collection('queues').add({
+        'plateNumber': _plateController.text.trim(),
+        'driverName': _fullNameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'station': _selectedStationName, // the station they chose during registration
+        'status': 'waiting',
+        'userId': FirebaseAuth.instance.currentUser?.uid ?? '',
+        'joinTime': FieldValue.serverTimestamp(),
         'vehicleType': _vehicleType,
-        'vehicleColor': _vehicleColorController.text,
-        'licenseNumber': _licenseController.text,
-        'stationName': _selectedStation,
-        'userId': uid,
-        'status': 'active',
-        'isAvailable': true,
-        'rating': 0,
-        'totalTrips': 0,
-        'createdAt': timestamp,
       });
 
-      // Save to vehicles collection
+      // Save vehicle for backward compatibility or as requested
       await FirebaseFirestore.instance.collection('vehicles').add({
         'plateNumber': _plateController.text,
         'vehicleType': _vehicleType,
         'driverName': _fullNameController.text,
         'ownerName': _fullNameController.text,
-        'route': _selectedStation,
+        'route': _selectedStationName,
         'status': 'Active',
-        'createdAt': timestamp,
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
@@ -81,7 +103,7 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Registration Successful'),
-            content: Text('Registration successful! You can now join the queue at $_selectedStation.'),
+            content: Text('Registration successful! You are now in the queue at $_selectedStationName. Your position will be shown when you join the queue screen.'),
             actions: [
               TextButton(
                 onPressed: () {
@@ -109,97 +131,113 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Register as Taxi Driver'),
+        title: const Text('Register as Taxi Driver', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: const Color(0xFFE65100),
-        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextFormField(
-                controller: _fullNameController,
-                decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
-                keyboardType: TextInputType.phone,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _plateController,
-                decoration: const InputDecoration(labelText: 'Plate Number (e.g. HW-34567)', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _vehicleType,
-                decoration: const InputDecoration(labelText: 'Vehicle Type', border: OutlineInputBorder()),
-                items: ['City Taxi', 'Minibus', 'Bajaj'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-                onChanged: (v) => setState(() => _vehicleType = v!),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _vehicleColorController,
-                decoration: const InputDecoration(labelText: 'Vehicle Color', border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _licenseController,
-                decoration: const InputDecoration(labelText: 'License Number', border: OutlineInputBorder()),
-                validator: (v) => v!.isEmpty ? 'Required' : null,
-              ),
-              const SizedBox(height: 16),
-              FutureBuilder<QuerySnapshot>(
-                future: FirebaseFirestore.instance.collection('taxi_stations').where('isActive', isEqualTo: true).get(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+      body: Container(
+        color: Colors.white,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Personal Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFE65100))),
+                const SizedBox(height: 16),
+                _buildTextField(_fullNameController, 'Full Name', Icons.person),
+                const SizedBox(height: 12),
+                _buildTextField(_phoneController, 'Phone Number', Icons.phone, keyboardType: TextInputType.phone),
+                const SizedBox(height: 12),
+                _buildTextField(_licenseController, 'License Number', Icons.card_membership),
 
-                  final stations = snapshot.data?.docs ?? [];
-                  if (stations.isEmpty) return const Text('No stations available');
-
-                  return DropdownButtonFormField<String>(
-                    initialValue: _selectedStation,
-                    decoration: const InputDecoration(labelText: 'Select Station', border: OutlineInputBorder()),
-                    items: stations.map((doc) {
-                      final name = doc['name'] as String;
-                      return DropdownMenuItem(value: name, child: Text(name));
-                    }).toList(),
-                    onChanged: (v) => setState(() => _selectedStation = v),
-                    validator: (v) => v == null ? 'Required' : null,
-                  );
-                },
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE65100),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 24),
+                const Text('Vehicle Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFE65100))),
+                const SizedBox(height: 16),
+                _buildTextField(_plateController, 'Plate Number (e.g. HW-34567)', Icons.pin_outlined),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _vehicleType,
+                  decoration: InputDecoration(
+                    labelText: 'Vehicle Type',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(Icons.category),
                   ),
-                  child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Register', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  items: ['City Taxi', 'Minibus', 'Bajaj'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                  onChanged: (v) => setState(() => _vehicleType = v!),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                _buildTextField(_vehicleColorController, 'Vehicle Color', Icons.color_lens_outlined),
+
+                const SizedBox(height: 24),
+                const Text('Station Assignment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFE65100))),
+                const SizedBox(height: 16),
+                FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance.collection('taxi_stations').where('isActive', isEqualTo: true).get(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: LinearProgressIndicator());
+                    }
+                    final stations = snapshot.data?.docs ?? [];
+                    if (stations.isEmpty) return const Text('No stations available. Please contact admin.', style: TextStyle(color: Colors.red));
+
+                    return DropdownButtonFormField<String>(
+                      hint: const Text('Select Pickup Station'),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.place),
+                      ),
+                      items: stations.map((doc) {
+                        final name = doc['name'] as String;
+                        return DropdownMenuItem(value: doc.id, child: Text(name));
+                      }).toList(),
+                      onChanged: (id) {
+                        final doc = stations.firstWhere((d) => d.id == id);
+                        setState(() {
+                          _selectedStationId = id;
+                          _selectedStationName = doc['name'];
+                        });
+                      },
+                      validator: (v) => v == null ? 'Required' : null,
+                    );
+                  },
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _register,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFE65100),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      elevation: 4,
+                    ),
+                    child: _isSubmitting
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('REGISTER NOW', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType? keyboardType}) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        prefixIcon: Icon(icon),
+      ),
+      keyboardType: keyboardType,
+      validator: (v) => v == null || v.isEmpty ? 'This field is required' : null,
     );
   }
 }

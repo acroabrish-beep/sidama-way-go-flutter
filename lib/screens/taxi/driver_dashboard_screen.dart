@@ -69,7 +69,10 @@ class _TaxiDriverDashboardState extends State<TaxiDriverDashboard> {
     }
 
     _positionSubscription = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 5, // Update every 5 meters
+      ),
     ).listen((Position position) {
       final zone = TaxiService.detectZone(position.latitude, position.longitude);
       _taxiService.updateDriverLocation(_driver!.id, position, zone);
@@ -182,6 +185,9 @@ class _TaxiDriverDashboardState extends State<TaxiDriverDashboard> {
     return StreamBuilder<List<RideRequest>>(
       stream: _taxiService.getNearbyRideRequests(_driver!.currentZone ?? 'Hawassa'),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+        }
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final requests = snapshot.data!;
 
