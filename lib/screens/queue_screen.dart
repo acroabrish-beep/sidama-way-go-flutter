@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../utils/firestore_utils.dart';
 
 class QueueScreen extends StatefulWidget {
   const QueueScreen({super.key});
@@ -110,10 +111,9 @@ class _PassengerViewState extends State<_PassengerView> {
 
                       // Sort by joinTime in Dart
                       taxis.sort((a, b) {
-                        final aTime = (a.data() as Map)['joinTime'];
-                        final bTime = (b.data() as Map)['joinTime'];
-                        if (aTime == null || bTime == null) return 0;
-                        return (aTime as Timestamp).compareTo(bTime as Timestamp);
+                        final aTime = FirestoreUtils.parseDateTime((a.data() as Map)['joinTime']) ?? DateTime.now();
+                        final bTime = FirestoreUtils.parseDateTime((b.data() as Map)['joinTime']) ?? DateTime.now();
+                        return aTime.compareTo(bTime);
                       });
 
                       if (taxis.isEmpty) {

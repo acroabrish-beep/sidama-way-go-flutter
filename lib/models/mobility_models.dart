@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 class BusTerminal {
   final String id;
@@ -99,7 +100,7 @@ class Ticket {
       routeId: data['routeId'] ?? '',
       seatNumber: data['seatNumber'] ?? 0,
       route: data['route'] ?? '',
-      date: (data['date'] as Timestamp).toDate(),
+      date: FirestoreUtils.parseDateTimeOrDefault(data['date']),
       paymentStatus: data['paymentStatus'] ?? '',
       qrData: data['qrData'] ?? '',
       isScanned: data['isScanned'] ?? false,
@@ -140,7 +141,7 @@ class TaxiQueue {
       taxiId: doc.id,
       plateNumber: data['plateNumber'] ?? '',
       position: data['position'] ?? 0,
-      joinedAt: (data['joinedAt'] as Timestamp).toDate(),
+      joinedAt: FirestoreUtils.parseDateTimeOrDefault(data['joinedAt']),
     );
   }
 }

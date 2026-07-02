@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/taxi_models.dart';
 import '../services/taxi_service.dart';
+import '../utils/firestore_utils.dart';
 
 class TaxiAdminDashboard extends StatefulWidget {
   const TaxiAdminDashboard({super.key});
@@ -238,57 +239,61 @@ class _StationsTabState extends State<_StationsTab> {
       backgroundColor: Colors.white,
       body: StreamBuilder<List<TaxiStation>>(
         stream: _taxiService.getTaxiStations(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 60),
-                  const SizedBox(height: 16),
-                  Text('Error loading stations: ${snapshot.error}', textAlign: TextAlign.center),
-                  ElevatedButton(onPressed: () => setState(() {}), child: const Text('Retry')),
-                ],
-              ),
-            );
-          }
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final stations = snapshot.data!;
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SingleChildScrollView(
-              child: DataTable(
-                columnSpacing: 20,
-                headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F3F4)),
-                columns: const [
-                  DataColumn(label: Text('STATION')),
-                  DataColumn(label: Text('CAPACITY')),
-                  DataColumn(label: Text('ONLINE')),
-                  DataColumn(label: Text('BUSY')),
-                  DataColumn(label: Text('WAITING PASS.')),
-                  DataColumn(label: Text('STATUS')),
-                  DataColumn(label: Text('ACTIONS')),
-                ],
-                rows: stations.map((s) => DataRow(cells: [
-                  DataCell(Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold))),
-                  DataCell(Text(s.capacity.toString())),
-                  DataCell(Text(s.activeTaxiCount.toString(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
-                  DataCell(const Text('3')), // Mock for now
-                  DataCell(Text(s.waitingPassengers.toString())),
-                  DataCell(Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                    child: const Text('ACTIVE', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
-                  )),
-                  DataCell(Row(
-                    children: [
-                      IconButton(icon: const Icon(Icons.edit, size: 18, color: Colors.blue), onPressed: () {}),
-                      IconButton(icon: const Icon(Icons.move_up, size: 18, color: Colors.orange), onPressed: () {}),
+        builder: (context, stationSnapshot) {
+          if (stationSnapshot.hasError) return Center(child: Text('Error: ${stationSnapshot.error}'));
+          if (!stationSnapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+          return StreamBuilder<List<TaxiDriver>>(
+            stream: _taxiService.getAllDrivers(),
+            builder: (context, driverSnapshot) {
+              if (!driverSnapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+              final stations = stationSnapshot.data!;
+              final allDrivers = driverSnapshot.data!;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SingleChildScrollView(
+                  child: DataTable(
+                    columnSpacing: 20,
+                    headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F3F4)),
+                    columns: const [
+                      DataColumn(label: Text('STATION')),
+                      DataColumn(label: Text('CAPACITY')),
+                      DataColumn(label: Text('ONLINE')),
+                      DataColumn(label: Text('BUSY')),
+                      DataColumn(label: Text('WAITING PASS.')),
+                      DataColumn(label: Text('STATUS')),
+                      DataColumn(label: Text('ACTIONS')),
                     ],
-                  )),
-                ])).toList(),
-              ),
-            ),
+                    rows: stations.map((s) {
+                      final stationDrivers = allDrivers.where((d) => d.stationId == s.id).toList();
+                      final onlineCount = stationDrivers.where((d) => d.isOnline).length;
+                      final busyCount = stationDrivers.where((d) => d.taxiStatus == TaxiStatus.busy).length;
+
+                      return DataRow(cells: [
+                        DataCell(Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold))),
+                        DataCell(Text(s.capacity.toString())),
+                        DataCell(Text(onlineCount.toString(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))),
+                        DataCell(Text(busyCount.toString(), style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold))),
+                        DataCell(Text(s.waitingPassengers.toString())),
+                        DataCell(Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                          child: Text(s.status.toUpperCase(), style: const TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                        )),
+                        DataCell(Row(
+                          children: [
+                            IconButton(icon: const Icon(Icons.edit, size: 18, color: Colors.blue), onPressed: () {}),
+                            IconButton(icon: const Icon(Icons.move_up, size: 18, color: Colors.orange), onPressed: () {}),
+                          ],
+                        )),
+                      ]);
+                    }).toList(),
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -606,7 +611,7 @@ class _AlertsTab extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.emergency, color: Colors.red),
                 title: Text('SOS from ${a['driverName']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                subtitle: Text('Time: ${a['timestamp'] != null ? (a['timestamp'] as Timestamp).toDate().toString() : 'Just now'}'),
+                subtitle: Text('Time: ${a['timestamp'] != null ? (FirestoreUtils.parseDateTime(a['timestamp'])?.toString() ?? 'Just now') : 'Just now'}'),
                 trailing: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white), child: const Text('DISPATCH HELP')),
               ),
             );

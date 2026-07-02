@@ -80,7 +80,8 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
         'plateNumber': _plateController.text.trim(),
         'driverName': _fullNameController.text.trim(),
         'phone': _phoneController.text.trim(),
-        'station': _selectedStationName, // the station they chose during registration
+        'station': _selectedStationName, // station name
+        'stationId': _selectedStationId, // added stationId
         'status': 'waiting',
         'userId': FirebaseAuth.instance.currentUser?.uid ?? '',
         'joinTime': FieldValue.serverTimestamp(),
@@ -174,13 +175,13 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                 const Text('Station Assignment', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFE65100))),
                 const SizedBox(height: 16),
                 FutureBuilder<QuerySnapshot>(
-                  future: FirebaseFirestore.instance.collection('taxi_stations').where('isActive', isEqualTo: true).get(),
+                  future: FirebaseFirestore.instance.collection('taxi_stations').where('status', isEqualTo: 'Active').get(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: LinearProgressIndicator());
                     }
                     final stations = snapshot.data?.docs ?? [];
-                    if (stations.isEmpty) return const Text('No stations available. Please contact admin.', style: TextStyle(color: Colors.red));
+                    if (stations.isEmpty) return const Text('No active stations available. Please contact admin.', style: TextStyle(color: Colors.red));
 
                     return DropdownButtonFormField<String>(
                       hint: const Text('Select Pickup Station'),
@@ -189,14 +190,16 @@ class _DriverRegistrationScreenState extends State<DriverRegistrationScreen> {
                         prefixIcon: const Icon(Icons.place),
                       ),
                       items: stations.map((doc) {
-                        final name = doc['name'] as String;
+                        final data = doc.data() as Map<String, dynamic>;
+                        final name = data['name'] as String;
                         return DropdownMenuItem(value: doc.id, child: Text(name));
                       }).toList(),
                       onChanged: (id) {
                         final doc = stations.firstWhere((d) => d.id == id);
+                        final data = doc.data() as Map<String, dynamic>;
                         setState(() {
                           _selectedStationId = id;
-                          _selectedStationName = doc['name'];
+                          _selectedStationName = data['name'];
                         });
                       },
                       validator: (v) => v == null ? 'Required' : null,

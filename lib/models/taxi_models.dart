@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 enum DriverStatus { pending, approved, rejected, suspended }
 enum TaxiStatus { online, offline, busy }
@@ -82,7 +83,7 @@ class TaxiDriver {
       heading: (data['heading'] ?? 0.0).toDouble(),
       speed: (data['speed'] ?? 0.0).toDouble(),
       currentZone: data['currentZone'],
-      lastUpdate: (data['lastUpdate'] as Timestamp?)?.toDate(),
+      lastUpdate: FirestoreUtils.parseDateTime(data['lastUpdate']),
     );
   }
 
@@ -154,7 +155,7 @@ class Taxi {
       currentStation: data['currentStation'] ?? '',
       currentStationId: data['currentStationId'],
       status: data['status'] ?? 'Offline',
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      updatedAt: FirestoreUtils.parseDateTime(data['updatedAt']),
     );
   }
 
@@ -221,7 +222,7 @@ class RideRequest {
       driverId: data['driverId'],
       driverName: data['driverName'],
       plateNumber: data['plateNumber'],
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      timestamp: FirestoreUtils.parseDateTimeOrDefault(data['timestamp']),
     );
   }
 
@@ -276,7 +277,7 @@ class TaxiStation {
       activeTaxiCount: data['activeTaxiCount'] ?? 0,
       waitingPassengers: data['waitingPassengers'] ?? 0,
       status: data['status'] ?? 'Active',
-      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
+      updatedAt: FirestoreUtils.parseDateTime(data['updatedAt']),
     );
   }
 

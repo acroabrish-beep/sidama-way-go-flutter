@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 class RouteModel {
   final String id;
@@ -121,8 +122,8 @@ class ScheduleModel {
       id: doc.id,
       routeId: data['routeId'] ?? '',
       vehicleId: data['vehicleId'] ?? '',
-      departureTime: (data['departureTime'] as Timestamp).toDate(),
-      arrivalTime: (data['arrivalTime'] as Timestamp).toDate(),
+      departureTime: FirestoreUtils.parseDateTimeOrDefault(data['departureTime']),
+      arrivalTime: FirestoreUtils.parseDateTimeOrDefault(data['arrivalTime']),
       fare: (data['fare'] ?? 0).toDouble(),
     );
   }

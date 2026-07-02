@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 class Hotel {
   final String id;
@@ -127,7 +128,7 @@ class CityOrder {
       items: List<Map<String, dynamic>>.from(data['items'] ?? []),
       totalAmount: (data['totalAmount'] ?? 0).toDouble(),
       status: data['status'] ?? 'pending',
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      timestamp: FirestoreUtils.parseDateTimeOrDefault(data['timestamp']),
       driverId: data['driverId'],
     );
   }

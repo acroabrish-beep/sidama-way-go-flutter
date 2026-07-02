@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart' as custom_auth;
 import '../models/taxi_models.dart';
 import '../models/user_model.dart';
 import '../services/taxi_service.dart';
+import '../utils/firestore_utils.dart';
 import 'mobility/driver_registration_screen.dart';
 import 'taxi/driver_dashboard_screen.dart';
 import 'taxi_admin_dashboard.dart';
@@ -28,7 +29,8 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
   String? _activeRequestId;
   LatLng _userLocation = const LatLng(7.0504, 38.4955);
   String _searchQuery = '';
-  String? _selectedStation;
+  String? _selectedStationName;
+  String? _selectedStationId;
   final ScrollController _scrollController = ScrollController();
 
   final List<Map<String, dynamic>> _popularDestinations = [
@@ -242,11 +244,11 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
               const Text('Taxi Stations nearby', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
               const SizedBox(height: 12),
               _buildStationsList(),
-              if (_selectedStation != null) ...[
+              if (_selectedStationId != null) ...[
                 const SizedBox(height: 24),
-                Text('Available Taxis at $_selectedStation', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFE65100))),
+                Text('Available Taxis at ${_selectedStationName ?? 'Station'}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFE65100))),
                 const SizedBox(height: 12),
-                _buildAvailableTaxisAtStation(_selectedStation!),
+                _buildAvailableTaxisAtStation(_selectedStationId!),
               ],
               const SizedBox(height: 40),
             ],
@@ -256,11 +258,11 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
     );
   }
 
-  Widget _buildAvailableTaxisAtStation(String stationName) {
+  Widget _buildAvailableTaxisAtStation(String stationId) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('queues')
-          .where('station', isEqualTo: stationName)
+          .where('stationId', isEqualTo: stationId)
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -273,10 +275,9 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
 
         // Sort by joinTime in Dart
         taxis.sort((a, b) {
-          final aTime = (a.data() as Map)['joinTime'];
-          final bTime = (b.data() as Map)['joinTime'];
-          if (aTime == null || bTime == null) return 0;
-          return (aTime as Timestamp).compareTo(bTime as Timestamp);
+          final aTime = FirestoreUtils.parseDateTime((a.data() as Map)['joinTime']) ?? DateTime.now();
+          final bTime = FirestoreUtils.parseDateTime((b.data() as Map)['joinTime']) ?? DateTime.now();
+          return aTime.compareTo(bTime);
         });
 
         if (taxis.isEmpty) {
@@ -305,14 +306,15 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
                     FirebaseFirestore.instance.collection('taxi_requests').add({
                       'plateNumber': data['plateNumber'],
                       'driverName': data['driverName'],
-                      'pickup': stationName,
+                      'pickup': _selectedStationName ?? '',
+                      'stationId': stationId,
                       'passengerId': FirebaseAuth.instance.currentUser?.uid ?? '',
                       'status': 'pending',
                       'createdAt': FieldValue.serverTimestamp(),
                     });
                     entry.value.reference.update({'status': 'in_progress'});
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Taxi booked! ${data['plateNumber']} is coming to $stationName'), backgroundColor: Colors.green),
+                      SnackBar(content: Text('Taxi booked! ${data['plateNumber']} is coming to ${_selectedStationName ?? 'the station'}'), backgroundColor: Colors.green),
                     );
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
@@ -392,13 +394,18 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
             scrollDirection: Axis.horizontal,
             itemCount: docs.length,
             itemBuilder: (context, i) {
-              final data = docs[i].data() as Map<String, dynamic>;
+              final doc = docs[i];
+              final data = doc.data() as Map<String, dynamic>;
               final stationName = data['name'] ?? 'Unknown';
-              final isSelected = _selectedStation == stationName;
+              final stationId = doc.id;
+              final isSelected = _selectedStationId == stationId;
 
               return GestureDetector(
                 onTap: () {
-                  setState(() => _selectedStation = stationName);
+                  setState(() {
+                    _selectedStationId = stationId;
+                    _selectedStationName = stationName;
+                  });
                   _scrollController.animateTo(
                     300,
                     duration: const Duration(milliseconds: 500),
@@ -426,7 +433,7 @@ class _CityTaxiScreenState extends State<CityTaxiScreen> {
                       StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
                             .collection('queues')
-                            .where('station', isEqualTo: stationName)
+                            .where('stationId', isEqualTo: stationId)
                             .snapshots(),
                         builder: (context, qSnap) {
                           final waitingCount = qSnap.data?.docs.where((d) => (d.data() as Map)['status'] == 'waiting').length ?? 0;
@@ -482,19 +489,9 @@ class _BookingBottomSheet extends StatefulWidget {
 }
 
 class _BookingBottomSheetState extends State<_BookingBottomSheet> {
-  String? _selectedStation;
+  String? _selectedStationId;
+  String? _selectedStationName;
   bool _showingTaxis = false;
-
-  final List<String> _defaultStations = [
-    'Piassa',
-    'Menaharia',
-    'Tabor',
-    'Gudumale',
-    'Addis Ketema',
-    'Haik Dar',
-    'Hawella Tula',
-    'Misrak',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -522,20 +519,34 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
           const Divider(height: 40),
           const Text('Select your pickup station:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _defaultStations.map((station) => ChoiceChip(
-              label: Text(station),
-              selected: _selectedStation == station,
-              selectedColor: Colors.orange,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedStation = selected ? station : null;
-                  _showingTaxis = false;
-                });
-              },
-            )).toList(),
+          FutureBuilder<QuerySnapshot>(
+            future: FirebaseFirestore.instance.collection('taxi_stations').where('status', isEqualTo: 'Active').get(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const LinearProgressIndicator();
+              final docs = snapshot.data!.docs;
+
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final name = data['name'] ?? 'Unknown';
+                  final id = doc.id;
+                  return ChoiceChip(
+                    label: Text(name),
+                    selected: _selectedStationId == id,
+                    selectedColor: Colors.orange,
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedStationId = selected ? id : null;
+                        _selectedStationName = selected ? name : null;
+                        _showingTaxis = false;
+                      });
+                    },
+                  );
+                }).toList(),
+              );
+            },
           ),
           const SizedBox(height: 32),
           if (!_showingTaxis)
@@ -543,7 +554,7 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                onPressed: _selectedStation == null ? null : () => setState(() => _showingTaxis = true),
+                onPressed: _selectedStationId == null ? null : () => setState(() => _showingTaxis = true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE65100),
                   foregroundColor: Colors.white,
@@ -563,7 +574,7 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('queues')
-          .where('station', isEqualTo: _selectedStation)
+          .where('stationId', isEqualTo: _selectedStationId)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
@@ -576,9 +587,8 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
 
         // Sort by joinTime in Dart
         docs.sort((a, b) {
-          final timeA = (a.data() as Map)['joinTime'] as Timestamp?;
-          final timeB = (b.data() as Map)['joinTime'] as Timestamp?;
-          if (timeA == null || timeB == null) return 0;
+          final timeA = FirestoreUtils.parseDateTime((a.data() as Map)['joinTime']) ?? DateTime.now();
+          final timeB = FirestoreUtils.parseDateTime((b.data() as Map)['joinTime']) ?? DateTime.now();
           return timeA.compareTo(timeB);
         });
 
@@ -586,7 +596,7 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Text('No taxis currently at $_selectedStation — check another station',
+              child: Text('No taxis currently at ${_selectedStationName ?? 'this station'} — check another station',
                 textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
             ),
           );
@@ -609,7 +619,7 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
                       title: Text(data['plateNumber'] ?? 'Unknown'),
                       subtitle: const Text('Verified Driver'),
                       trailing: ElevatedButton(
-                        onPressed: () => _bookTaxi(data['plateNumber']),
+                        onPressed: () => _bookTaxi(data['plateNumber'], data['driverName'] ?? 'Driver'),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
                         child: const Text('Book'),
                       ),
@@ -624,19 +634,20 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
     );
   }
 
-  void _bookTaxi(String plateNumber) async {
+  void _bookTaxi(String plateNumber, String driverName) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       final requestId = await widget.taxiService.createRideRequest(RideRequest(
         id: '',
         userId: user?.uid ?? '',
         userName: user?.displayName ?? 'Passenger',
-        pickup: _selectedStation ?? '',
+        pickup: _selectedStationName ?? '',
         pickupLocation: const GeoPoint(0,0), // This should ideally come from station location
         destination: widget.destination['name'],
         destinationLocation: const GeoPoint(0,0),
         fare: (widget.destination['fare'] as num).toDouble(),
         status: 'Pending',
+        driverName: driverName,
         plateNumber: plateNumber,
         timestamp: DateTime.now(),
       ));
@@ -645,7 +656,7 @@ class _BookingBottomSheetState extends State<_BookingBottomSheet> {
         Navigator.pop(context);
         widget.onBooked(requestId);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Taxi booked! Your driver will meet you at $_selectedStation')),
+          SnackBar(content: Text('Taxi booked! Your driver will meet you at $_selectedStationName')),
         );
       }
     } catch (e) {

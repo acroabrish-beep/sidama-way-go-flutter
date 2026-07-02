@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 enum UserRole {
   super_admin,
@@ -53,8 +54,8 @@ class UserModel {
         orElse: () => UserRole.citizen,
       ),
       department: map['department'] ?? '',
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      lastLogin: (map['lastLogin'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: FirestoreUtils.parseDateTimeOrDefault(map['createdAt']),
+      lastLogin: FirestoreUtils.parseDateTimeOrDefault(map['lastLogin']),
       isActive: map['isActive'] ?? true,
       walletBalance: (map['walletBalance'] ?? 0.0).toDouble(),
       membershipNumber: map['membershipNumber'] ?? '',

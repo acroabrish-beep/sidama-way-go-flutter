@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 class CityUser {
   final String id;
@@ -77,7 +78,7 @@ class Ticket {
       seatNumber: data['seatNumber'] ?? 0,
       fare: (data['fare'] ?? 0).toDouble(),
       paymentStatus: data['paymentStatus'] ?? 'pending',
-      date: (data['date'] as Timestamp).toDate(),
+      date: FirestoreUtils.parseDateTimeOrDefault(data['date']),
       verificationCode: data['verificationCode'] ?? '',
     );
   }
@@ -156,7 +157,7 @@ class Announcement {
       content: data['content'] ?? '',
       category: data['category'] ?? 'General',
       imageUrl: data['imageUrl'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: FirestoreUtils.parseDateTimeOrDefault(data['createdAt']),
     );
   }
 }

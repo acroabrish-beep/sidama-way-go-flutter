@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../utils/firestore_utils.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -99,7 +100,7 @@ class WalletScreen extends StatelessWidget {
                             itemBuilder: (context, i) {
                               final t = docs[i].data() as Map<String, dynamic>;
                               final bool isCredit = t['type'] == 'topup' || t['amount'] > 0; // Simplified logic
-                              final ts = t['timestamp'] as Timestamp?;
+                              final ts = FirestoreUtils.parseDateTime(t['timestamp']);
 
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 8),
@@ -117,7 +118,7 @@ class WalletScreen extends StatelessWidget {
                                     t['title'] ?? t['reason'] ?? 'Transaction',
                                     style: const TextStyle(fontWeight: FontWeight.w600),
                                   ),
-                                  subtitle: Text(ts != null ? DateFormat('dd MMM, HH:mm').format(ts.toDate()) : 'N/A'),
+                                  subtitle: Text(ts != null ? DateFormat('dd MMM, HH:mm').format(ts) : 'N/A'),
                                   trailing: Text(
                                     '${t['amount']} ETB',
                                     style: TextStyle(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../utils/firestore_utils.dart';
 
 class PaymentScreen extends StatelessWidget {
   const PaymentScreen({super.key});
@@ -84,13 +85,13 @@ class PaymentScreen extends StatelessWidget {
                               return Column(
                                 children: docs.map((doc) {
                                   final d = doc.data() as Map<String, dynamic>;
-                                  final ts = d['timestamp'] as Timestamp?;
+                                  final ts = FirestoreUtils.parseDateTime(d['timestamp']);
                                   final amount = d['amount'] ?? 0;
                                   final isCredit = d['type'] == 'topup';
 
                                   return ListTile(
                                     title: Text(d['title'] ?? 'Payment'),
-                                    subtitle: Text(ts != null ? DateFormat('dd MMM').format(ts.toDate()) : 'N/A'),
+                                    subtitle: Text(ts != null ? DateFormat('dd MMM').format(ts) : 'N/A'),
                                     trailing: Text(
                                       '${isCredit ? "+" : "-"}$amount ETB',
                                       style: TextStyle(fontWeight: FontWeight.bold, color: isCredit ? Colors.green : Colors.black),

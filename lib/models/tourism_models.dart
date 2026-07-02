@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 enum ApprovalStatus { pending, approved, rejected, suspended }
 
@@ -39,7 +40,7 @@ class ContractRide {
   final double price;
   final DateTime date;
   ContractRide({required this.id, required this.userId, required this.pickup, required this.destination, required this.vehicleType, required this.status, required this.passengers, required this.price, required this.date, required this.passengerPhone});
-  factory ContractRide.fromMap(Map<String, dynamic> d, String id) => ContractRide(id: id, userId: d['userId'] ?? '', pickup: d['pickup'] ?? '', destination: d['destination'] ?? '', vehicleType: d['vehicleType'] ?? 'Taxi', status: d['status'] ?? 'pending', passengers: (d['passengers'] as num?)?.toInt() ?? 1, price: (d['price'] as num?)?.toDouble() ?? 0, date: (d['date'] as Timestamp?)?.toDate() ?? DateTime.now(), passengerPhone: d['passengerPhone'] ?? '');
+  factory ContractRide.fromMap(Map<String, dynamic> d, String id) => ContractRide(id: id, userId: d['userId'] ?? '', pickup: d['pickup'] ?? '', destination: d['destination'] ?? '', vehicleType: d['vehicleType'] ?? 'Taxi', status: d['status'] ?? 'pending', passengers: (d['passengers'] as num?)?.toInt() ?? 1, price: (d['price'] as num?)?.toDouble() ?? 0, date: FirestoreUtils.parseDateTimeOrDefault(d['date']), passengerPhone: d['passengerPhone'] ?? '');
   Map<String, dynamic> toMap() => {'userId': userId, 'pickup': pickup, 'destination': destination, 'vehicleType': vehicleType, 'status': status, 'passengers': passengers, 'price': price, 'date': date, 'passengerPhone': passengerPhone, 'createdAt': FieldValue.serverTimestamp()};
 }
 
@@ -47,7 +48,7 @@ class TouristEvent {
   final String id, title, location, description, imageUrl;
   final DateTime date;
   TouristEvent({required this.id, required this.title, required this.location, required this.description, required this.imageUrl, required this.date});
-  factory TouristEvent.fromMap(Map<String, dynamic> d, String id) => TouristEvent(id: id, title: d['title'] ?? '', location: d['location'] ?? 'Hawassa', description: d['description'] ?? '', imageUrl: d['imageUrl'] ?? '', date: (d['date'] as Timestamp?)?.toDate() ?? DateTime.now());
+  factory TouristEvent.fromMap(Map<String, dynamic> d, String id) => TouristEvent(id: id, title: d['title'] ?? '', location: d['location'] ?? 'Hawassa', description: d['description'] ?? '', imageUrl: d['imageUrl'] ?? '', date: FirestoreUtils.parseDateTimeOrDefault(d['date']));
   Map<String, dynamic> toMap() => {'title': title, 'location': location, 'description': description, 'imageUrl': imageUrl, 'date': date};
 }
 
@@ -57,7 +58,7 @@ class TouristBooking {
   final double totalPrice;
   final DateTime createdAt;
   TouristBooking({required this.id, required this.userId, required this.userName, required this.passengerName, required this.phone, required this.date, required this.status, required this.packageId, required this.packageName, required this.type, required this.people, required this.hours, required this.totalPrice, required this.createdAt});
-  factory TouristBooking.fromMap(Map<String, dynamic> d, String id) => TouristBooking(id: id, userId: d['userId'] ?? '', userName: d['userName'] ?? '', passengerName: d['passengerName'] ?? '', phone: d['phone'] ?? '', date: d['date'] ?? '', status: d['status'] ?? 'pending', packageId: d['packageId'] ?? '', packageName: d['packageName'] ?? '', type: d['type'] ?? 'package', people: (d['people'] as num?)?.toInt() ?? 1, hours: (d['hours'] as num?)?.toInt() ?? 0, totalPrice: (d['totalPrice'] as num?)?.toDouble() ?? 0.0, createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now());
+  factory TouristBooking.fromMap(Map<String, dynamic> d, String id) => TouristBooking(id: id, userId: d['userId'] ?? '', userName: d['userName'] ?? '', passengerName: d['passengerName'] ?? '', phone: d['phone'] ?? '', date: d['date'] ?? '', status: d['status'] ?? 'pending', packageId: d['packageId'] ?? '', packageName: d['packageName'] ?? '', type: d['type'] ?? 'package', people: (d['people'] as num?)?.toInt() ?? 1, hours: (d['hours'] as num?)?.toInt() ?? 0, totalPrice: (d['totalPrice'] as num?)?.toDouble() ?? 0.0, createdAt: FirestoreUtils.parseDateTimeOrDefault(d['createdAt']));
   Map<String, dynamic> toMap() => {'userId': userId, 'userName': userName, 'passengerName': passengerName, 'phone': phone, 'date': date, 'status': status, 'packageId': packageId, 'packageName': packageName, 'type': type, 'people': people, 'hours': hours, 'totalPrice': totalPrice, 'createdAt': FieldValue.serverTimestamp()};
 }
 

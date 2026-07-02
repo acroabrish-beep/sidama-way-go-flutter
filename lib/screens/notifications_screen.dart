@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../utils/firestore_utils.dart';
 
 class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
@@ -34,7 +35,7 @@ class NotificationsScreen extends StatelessWidget {
             itemBuilder: (context, i) {
               final d = docs[i].data() as Map<String, dynamic>;
               final isRead = d['isRead'] ?? false;
-              final ts = (d['createdAt'] as Timestamp?)?.toDate();
+              final ts = FirestoreUtils.parseDateTime(d['createdAt']);
 
               return Card(
                 color: isRead ? Colors.white : Colors.green[50],

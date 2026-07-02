@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/firestore_utils.dart';
 
 class CityUser {
   final String id;
@@ -18,7 +19,7 @@ class CityUser {
       phone: data['phone'] ?? '',
       email: data['email'] ?? '',
       role: data['role'] ?? 'passenger',
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: FirestoreUtils.parseDateTimeOrDefault(data['createdAt']),
     );
   }
 }
@@ -75,7 +76,7 @@ class BusTerminalTicket {
       seatNumber: data['seatNumber'] ?? 0,
       fare: (data['fare'] ?? 0).toDouble(),
       paymentStatus: data['paymentStatus'] ?? 'pending',
-      travelDate: (data['travelDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      travelDate: FirestoreUtils.parseDateTimeOrDefault(data['travelDate']),
       verificationCode: data['verificationCode'] ?? '',
     );
   }
@@ -99,7 +100,7 @@ class EmergencyRequest {
       type: data['type'] ?? '',
       location: data['location'] ?? const GeoPoint(7.0504, 38.4955),
       status: data['status'] ?? 'pending',
-      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      timestamp: FirestoreUtils.parseDateTimeOrDefault(data['timestamp']),
     );
   }
 }
