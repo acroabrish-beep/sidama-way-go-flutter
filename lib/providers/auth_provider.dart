@@ -32,85 +32,20 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      // MOCK TEST BYPASS LOGIC
-      final mockUser = _getMockUser(email, password);
-      if (mockUser != null) {
-        _userModel = mockUser;
-        print('--- MOCK LOGIN SUCCESS ---');
-        print('Mock User: ${mockUser.fullName} (${mockUser.role.name})');
-        return;
-      }
-
       final result = await _authService.signIn(email, password);
       if (result?.user != null) {
-        // Manually fetch and set user model immediately to avoid race conditions
         _userModel = await _authService.getUserData(result!.user!.uid);
+      }
+      if (_userModel == null) {
+        await _authService.signOut();
+        throw StateError(
+          'Your account is authenticated, but no active Sidama Way Go profile was found.',
+        );
       }
     } finally {
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  UserModel? _getMockUser(String email, String password) {
-    if (password != 'password123') return null;
-
-    UserRole? role;
-    String name = "";
-
-    switch (email.toLowerCase()) {
-      case 'admin@sidamawaygo.com':
-        role = UserRole.super_admin;
-        name = "Super Admin (Mock)";
-        break;
-      case 'newterminal@sidamawaygo.com':
-        role = UserRole.new_terminal_admin;
-        name = "New Terminal Admin (Mock)";
-        break;
-      case 'oldterminal@sidamawaygo.com':
-        role = UserRole.old_terminal_admin;
-        name = "Old Terminal Admin (Mock)";
-        break;
-      case 'taxi@sidamawaygo.com':
-        role = UserRole.taxi_admin;
-        name = "Taxi Admin (Mock)";
-        break;
-      case 'tourism@sidamawaygo.com':
-        role = UserRole.tourism_admin;
-        name = "Tourism Admin (Mock)";
-        break;
-      case 'hotel@sidamawaygo.com':
-        role = UserRole.hotel_admin;
-        name = "Hotel Admin (Mock)";
-        break;
-      case 'health@sidamawaygo.com':
-        role = UserRole.health_admin;
-        name = "Healthcare Admin (Mock)";
-        break;
-      case 'pharmacy@sidamawaygo.com':
-        role = UserRole.pharmacy_admin;
-        name = "Pharmacy Admin (Mock)";
-        break;
-      case 'emergency@sidamawaygo.com':
-        role = UserRole.emergency_admin;
-        name = "Emergency Admin (Mock)";
-        break;
-    }
-
-    if (role != null) {
-      return UserModel(
-        uid: 'mock-uid-${role.name}',
-        fullName: name,
-        email: email,
-        phone: '000-000-0000',
-        role: role,
-        department: role.name,
-        createdAt: DateTime.now(),
-        lastLogin: DateTime.now(),
-        isActive: true,
-      );
-    }
-    return null;
   }
 
   Future<void> signOut() async {
@@ -131,8 +66,6 @@ class AuthProvider with ChangeNotifier {
     required String password,
     required String fullName,
     required String phone,
-    UserRole role = UserRole.citizen,
-    String department = '',
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -142,8 +75,6 @@ class AuthProvider with ChangeNotifier {
         password: password,
         fullName: fullName,
         phone: phone,
-        role: role,
-        department: department,
       );
     } finally {
       _isLoading = false;
