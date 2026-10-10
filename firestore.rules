@@ -13,8 +13,8 @@ service cloud.firestore {
     }
     function isOwner(data) {
       return signedIn() && (
-        (data.userId != null && data.userId == request.auth.uid) ||
-        (data.uid != null && data.uid == request.auth.uid)
+        (data.keys().hasAny(['userId']) && data.userId == request.auth.uid) ||
+        (data.keys().hasAny(['uid']) && data.uid == request.auth.uid)
       );
     }
 
@@ -24,7 +24,7 @@ service cloud.firestore {
     match /medicines/{doc} { allow read: if true; allow write: if isAdmin(); }
     match /tourism_sites/{doc} { allow read: if true; allow write: if isAdmin(); }
     match /hotels/{doc} { allow read: if true; allow write: if isAdmin(); }
-    match /restaurants/{doc} { allow read: true; allow write: if isAdmin(); }
+    match /restaurants/{doc} { allow read: if true; allow write: if isAdmin(); }
     match /menu_items/{doc} { allow read: true; allow write: if isAdmin(); }
     match /terminal_routes/{doc} { allow read: true; allow write: if isAdmin(); }
 
